@@ -90,11 +90,11 @@ public class ScreenshotDetection {
                     if (event == FileObserver.CREATE) {
                         Log.d("ScreenshotDetection", "Screenshot detected: " + path);
                         isScreenshotDetected = true;
-                        if (securitySDK != null) {
-                            securitySDK.onScreenshotDetected();
-                        } else {
-                            Log.e("ScreenshotDetection", "SecuritySDK is not initialized.");
-                        }
+//                        if (securitySDK != null) {
+//                            securitySDK.onScreenshotDetected();
+//                        } else {
+//                            Log.e("ScreenshotDetection", "SecuritySDK is not initialized.");
+//                        }
                     }
                 }
             };

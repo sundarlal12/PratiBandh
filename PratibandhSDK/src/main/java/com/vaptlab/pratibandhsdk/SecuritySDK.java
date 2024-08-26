@@ -53,7 +53,7 @@ String exp="1";
 
 
 
-    private FileObserver screenshotObserver;
+   private FileObserver screenshotObserver;
 
     private ScreenshotDetection screenshotDetection;
 
@@ -73,12 +73,12 @@ String exp="1";
 
         this.executorService = Executors.newFixedThreadPool(4);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            screenshotDetection = new ScreenshotDetection(context, this);
-        }
-
-        screenshotDetection = new ScreenshotDetection(this.context, this);
-        screenshotDetection.enableScreenshotDetection();
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+//            screenshotDetection = new ScreenshotDetection(context, this);
+//        }
+//
+//        screenshotDetection = new ScreenshotDetection(this.context, this);
+//        screenshotDetection.enableScreenshotDetection();
 
 //        ScreenshotDetection screenshotDetection = new ScreenshotDetection(activity);
 //        screenshotDetection.enableScreenshotDetection();
@@ -416,12 +416,12 @@ String exp="1";
 
             if (securityIssueDetected) {
                 sendMetricsToServer(securityMetrics);
-                new Handler().postDelayed(() -> exitApp(activity), 20000); // Delay of 20 seconds
+                new Handler().postDelayed(() -> exitApp(activity), 10000); // Delay of 20 seconds
             }
             if (securityIssueDetected1) {
                 sendRuntimeMetricsAndCloseApp(securityMetrics, activity);
                 sendMetricsToServerruntime(securityMetrics);
-                new Handler().postDelayed(() -> exitApp(activity), 20000); // Delay of 20 seconds
+                new Handler().postDelayed(() -> exitApp(activity), 10000); // Delay of 20 seconds
             }
 
 
@@ -464,25 +464,25 @@ String exp="1";
         }
     }
 
-    private boolean isScreenshotDetected() {
-        return isScreenshotDetected;
-    }
+//    private boolean isScreenshotDetected() {
+//        return isScreenshotDetected;
+//    }
+//
+//    public void stopScreenshotDetection() {
+//        if (screenshotObserver != null) {
+//            screenshotObserver.stopWatching();
+//        }
+//    }
 
-    public void stopScreenshotDetection() {
-        if (screenshotObserver != null) {
-            screenshotObserver.stopWatching();
-        }
-    }
-
-    public void onScreenshotDetected() {
-        JSONObject securityMetrics = new JSONObject();
-        try {
-            securityMetrics.put("isScreenshotDetected", true);
-            sendMetricsToServer(securityMetrics);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+//    public void onScreenshotDetected() {
+//        JSONObject securityMetrics = new JSONObject();
+//        try {
+//            securityMetrics.put("isScreenshotDetected", true);
+//            sendMetricsToServer(securityMetrics);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
 
 //    public void onStop(Activity activity) {
 //        screenshotDetection.disableScreenshotDetection();
@@ -689,7 +689,7 @@ String exp="1";
 
     private void sendRuntimeMetricsAndCloseApp(JSONObject metrics, Activity activity) {
         sendRuntimeMetricsToServer(metrics);
-        new Handler().postDelayed(() -> exitApp(activity), 20000); // Close app after 20 seconds
+        new Handler().postDelayed(() -> exitApp(activity), 10000); // Close app after 20 seconds
     }
 
 
@@ -698,11 +698,11 @@ String exp="1";
         NetworkHelper.sendPostRequest(context, runtimeServerUrl, metrics.toString());
     }
 
-    public void onStop(Activity activity) {
-        if (screenshotDetection != null) {
-            screenshotDetection.disableScreenshotDetection();
-        }
-    }
+//    public void onStop(Activity activity) {
+//        if (screenshotDetection != null) {
+//            screenshotDetection.disableScreenshotDetection();
+//        }
+//    }
 
     private void exitApp(Activity activity) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
