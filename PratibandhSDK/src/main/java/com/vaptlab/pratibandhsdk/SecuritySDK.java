@@ -151,7 +151,7 @@ String exp="1";
             String appName = getAppName(context);
             String deviceId = getDeviceId(context);
             String deviceName = getDeviceName();
-            String imei = getIMEINumber(context);
+            String imei =getDeviceId(context); //getIMEINumber(context);
             String deviceType = getDeviceType();
             String sig_hash=SignatureUtils.generateCurrentSignatureHash(context);
             retrieveExpectedSignatureHash(context);
@@ -614,13 +614,13 @@ String exp="1";
         return Build.MODEL;
     }
 
-    private String getIMEINumber(Context context) {
-        TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
-            return "Permission not granted";
-        }
-        return telephonyManager.getDeviceId();  // This method is deprecated in Android Q (API 29+)
-    }
+//    private String getIMEINumber(Context context) {
+//        TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+//        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+//            return "Permission not granted";
+//        }
+//        return telephonyManager.getDeviceId();  // This method is deprecated in Android Q (API 29+)
+//    }
 
 
 

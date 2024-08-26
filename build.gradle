@@ -8,6 +8,7 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:8.0.2'
         // Add other classpath dependencies if needed
+       // implementation 'com.github.sundarlal12:PratiBandh:1.0'
     }
 }
 

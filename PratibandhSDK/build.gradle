@@ -48,10 +48,10 @@ publishing {
             artifactId = 'pratibandhsdk'
             version = '1.0'
 
-            afterEvaluate {
-                // Ensures that the publication is configured after evaluating
-                artifact("$buildDir/outputs/aar/${project.name}-release.aar")
-            }
+//            afterEvaluate {
+//                // Ensures that the publication is configured after evaluating
+//                artifact("$buildDir/outputs/aar/${project.name}-release.aar")
+//            }
         }
     }
     repositories {

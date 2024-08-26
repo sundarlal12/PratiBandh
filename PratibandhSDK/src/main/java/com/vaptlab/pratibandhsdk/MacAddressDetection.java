@@ -1,4 +1,6 @@
+package com.vaptlab.pratibandhsdk;
 import android.content.Context;
+
 import android.os.Build;
 import android.provider.Settings;
 import android.telephony.TelephonyManager;
@@ -33,32 +35,34 @@ public class MacAddressDetection {
         String androidId = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
 
         // Optionally, you can include other identifiers such as IMEI or serial number
-        String imei = getIMEI(context);
-        String serialNumber = getSerialNumber();
+        String imei = getMacAddressPreM(context);//getSerialNumber();//getIMEI(context);
+        String serialNumber =getMacAddressPreM(context);// getSerialNumber();
 
         // Combine these identifiers or choose the most suitable one
         return "AndroidID: " + androidId + ", IMEI: " + imei + ", Serial: " + serialNumber;
     }
 
     // Method to get IMEI (requires permission on Android)
-    private static String getIMEI(Context context) {
-        TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-        if (telephonyManager != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                return telephonyManager.getImei();
-            } else {
-                return telephonyManager.getDeviceId(); // Deprecated but still used for legacy support
-            }
-        }
-        return "Unavailable";
-    }
+//    private static String getIMEI(Context context) {
+//        TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+//        if (telephonyManager != null) {
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//                return telephonyManager.getImei();
+//            } else {
+//                return telephonyManager.getDeviceId(); // Deprecated but still used for legacy support
+//            }
+//        }
+//        return "Unavailable";
+//    }
 
     // Method to get Serial number (API level 26 and above)
-    private static String getSerialNumber() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            return Build.getSerial();
-        } else {
-            return Build.SERIAL; // Deprecated in newer versions
-        }
-    }
+//    private static String getSerialNumber() {
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//            return Build.getSerial();
+//        } else {
+//            return Build.SERIAL; // Deprecated in newer versions
+//        }
+
+
+//    }
 }
