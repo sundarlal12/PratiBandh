@@ -6,6 +6,7 @@ buildscript {
         gradlePluginPortal()
 
     }
+
     dependencies {
         classpath 'com.android.tools.build:gradle:8.0.2'
         // Add other classpath dependencies if needed
@@ -17,7 +18,7 @@ plugins {
 alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
     id 'maven-publish'
-    
+
 
 
 }
