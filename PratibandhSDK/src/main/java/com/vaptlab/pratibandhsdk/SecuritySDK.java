@@ -2,6 +2,8 @@ package com.vaptlab.pratibandhsdk;
 //import com.vaptlab.pratibandhsdk.MacAddressDetection;
 
 import android.content.Context;
+
+import org.json.JSONException;
 import org.json.JSONObject;
 import android.Manifest;
 import android.app.Activity;
@@ -290,25 +292,6 @@ String exp="1";
             }
 
             //code
-            isAppSignatureValid(context, new SignatureValidationCallback() {
-                @Override
-                public void onValidationResult(boolean isValid) {
-                    try {
-                        if (isValid) {
-                            securityMetrics.put("isSignatureValid", true);
-                            Log.d("test", "App signature is valid.");
-                        } else {
-                            securityMetrics.put("isSignatureValid", false);
-                            Log.d("test", "App signature is not valid.");
-                        }
-                        // Send metrics to server after setting the value
-                        sendMetricsToServer(securityMetrics);
-
-                    } catch (Exception e) {
-                        Log.e("tes", "Error creating JSON object", e);
-                    }
-                }
-            });
 
 
             //code
@@ -414,14 +397,42 @@ String exp="1";
                 securityMetrics.put("isMockLocationEnabled", false);
             }
 
+
+            //keep it as last deetction
+
+            isAppSignatureValid(context, new SignatureValidationCallback() {
+                @Override
+                public void onValidationResult(boolean isValid) {
+                    try {
+                        if (isValid) {
+                            securityMetrics.put("isSignatureValid", true);
+                            Log.d("test", "App signature is valid.");
+                        } else {
+                            securityMetrics.put("isSignatureValid", false);
+                            Log.d("test", "App signature is not valid.");
+                        }
+                        // Send metrics to server after setting the value
+                          sendMetricsToServer(securityMetrics);
+
+                    } catch (Exception e) {
+                        Log.e("tes", "Error creating JSON object", e);
+                    }
+                }
+            });
+
+
+            //last detction
+
+
             if (securityIssueDetected) {
                 sendMetricsToServer(securityMetrics);
-                new Handler().postDelayed(() -> exitApp(activity), 10000); // Delay of 20 seconds
+                new Handler().postDelayed(() -> exitApp(activity), 5000); // Delay of 20 seconds
             }
+
             if (securityIssueDetected1) {
                 sendRuntimeMetricsAndCloseApp(securityMetrics, activity);
                 sendMetricsToServerruntime(securityMetrics);
-                new Handler().postDelayed(() -> exitApp(activity), 10000); // Delay of 20 seconds
+                new Handler().postDelayed(() -> exitApp(activity), 5000); // Delay of 20 seconds
             }
 
 
@@ -448,21 +459,21 @@ String exp="1";
         return false; // There is no direct method to detect active media projection, so returning false.
     }
 
-    private void startScreenshotDetection() {
-        File screenshotDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES + "/Screenshots");
-        if (screenshotDir.exists()) {
-            screenshotObserver = new FileObserver(screenshotDir.getPath(), FileObserver.CREATE) {
-                @Override
-                public void onEvent(int event, String path) {
-                    if (event == FileObserver.CREATE) {
-                        Log.d("SecuritySDK", "Screenshot detected: " + path);
-                        isScreenshotDetected = true;
-                    }
-                }
-            };
-            screenshotObserver.startWatching();
-        }
-    }
+//    private void startScreenshotDetection() {
+//        File screenshotDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES + "/Screenshots");
+//        if (screenshotDir.exists()) {
+//            screenshotObserver = new FileObserver(screenshotDir.getPath(), FileObserver.CREATE) {
+//                @Override
+//                public void onEvent(int event, String path) {
+//                    if (event == FileObserver.CREATE) {
+//                        Log.d("SecuritySDK", "Screenshot detected: " + path);
+//                        isScreenshotDetected = true;
+//                    }
+//                }
+//            };
+//            screenshotObserver.startWatching();
+//        }
+//    }
 
 //    private boolean isScreenshotDetected() {
 //        return isScreenshotDetected;
@@ -689,7 +700,7 @@ String exp="1";
 
     private void sendRuntimeMetricsAndCloseApp(JSONObject metrics, Activity activity) {
         sendRuntimeMetricsToServer(metrics);
-        new Handler().postDelayed(() -> exitApp(activity), 10000); // Close app after 20 seconds
+        new Handler().postDelayed(() -> exitApp(activity), 5000); // Close app after 20 seconds
     }
 
 
