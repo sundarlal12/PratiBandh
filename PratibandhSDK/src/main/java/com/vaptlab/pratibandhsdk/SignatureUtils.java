@@ -180,7 +180,7 @@ public class SignatureUtils {
     }
 
     public interface SignatureHashCallback {
-        void onSuccess(String signatureHash, String isscreenshotallowata);
+        void onSuccess(String signatureHash, String isscreenshotallowed);
         void onFailure(String error);
     }
 }
