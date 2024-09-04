@@ -83,7 +83,7 @@ public class AppCloneDetection {
     private static final String TAG = "AppCloneDetection";
 
     public static boolean isAppCloned(Context context, String appName) {
-        if (isPackageNameCloned(context) || isRunningInParallelSpace(context) || hasDualAppProperty() || isInstalledInUnusualLocation()) {
+        if (isPackageNameCloned(context) || isRunningInParallelSpace(context) || hasDualAppProperty() || isInstalledInUnusualLocation(context)) {
             return true;
         }
         return false;
@@ -126,14 +126,29 @@ public class AppCloneDetection {
     /**
      * Check if the app is installed in an unusual location, which might indicate a cloned app.
      */
-    public static boolean isInstalledInUnusualLocation() {
-        String appPath = Environment.getDataDirectory().getAbsolutePath();
-        if (!appPath.startsWith("/data/")) {
-            Log.d(TAG, "App installed in an unusual location, possible cloning detected!");
+//    public static boolean isInstalledInUnusualLocation() {
+//        String appPath = Environment.getDataDirectory().getAbsolutePath();
+//        if (!appPath.startsWith("/data/")) {
+//            Log.d(TAG, "App installed in an unusual location, possible cloning detected!");
+//            return true;
+//        }
+//        return false;
+//    }
+    public static boolean isInstalledInUnusualLocation(Context context) {
+        String appPath = context.getApplicationInfo().sourceDir;
+
+        // The usual app installation path on most Android devices
+        String expectedPathPrefix = "/data/app/";
+
+        // If the app is not installed in the typical /data/app/ directory
+        if (!appPath.startsWith(expectedPathPrefix)) {
+            Log.d(TAG, "App installed in an unusual location: " + appPath + ", possible cloning detected!");
             return true;
         }
+
         return false;
     }
+
 
     /**
      * Check if certain system properties indicate a dual app or cloned environment.

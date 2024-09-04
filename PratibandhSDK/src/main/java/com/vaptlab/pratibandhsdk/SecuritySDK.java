@@ -1,13 +1,14 @@
 package com.vaptlab.pratibandhsdk;
-//import com.vaptlab.pratibandhsdk.MacAddressDetection;
 
+
+import android.annotation.SuppressLint;
 import android.content.Context;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import android.Manifest;
 import android.app.Activity;
-import java.util.concurrent.Future;
 import android.os.Handler;
 import android.os.Looper;
 import android.widget.Toast;
@@ -16,28 +17,23 @@ import android.util.Log;
 
 import java.util.Map;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
+
 import android.content.pm.PackageManager;
 import android.media.projection.MediaProjectionManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Debug;
-import android.os.Environment;
+
 import android.os.FileObserver;
-import android.os.Handler;
+
 import android.provider.Settings;
-import android.telephony.TelephonyManager;
-import android.util.Log;
-import android.widget.Toast;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import org.json.JSONObject;
-
-import java.io.File;
 import java.security.MessageDigest;
 import java.util.Arrays;
 //private ExecutorService executorService;
@@ -54,7 +50,7 @@ String exp="1";
     private String runtimeServerUrl;
 
 
-
+    private UUIDHelper uuidHelper;
    private FileObserver screenshotObserver;
 
     private ScreenshotDetection screenshotDetection;
@@ -74,16 +70,8 @@ String exp="1";
         this.runtimeclone="https://lotuss366.com/pratibandhAPI/Set_orginial_signature.php";
 
         this.executorService = Executors.newFixedThreadPool(4);
-
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-//            screenshotDetection = new ScreenshotDetection(context, this);
-//        }
-//
-//        screenshotDetection = new ScreenshotDetection(this.context, this);
-//        screenshotDetection.enableScreenshotDetection();
-
-//        ScreenshotDetection screenshotDetection = new ScreenshotDetection(activity);
-//        screenshotDetection.enableScreenshotDetection();
+        this.screenshotDetection = new ScreenshotDetection(context);
+        this.uuidHelper = new UUIDHelper(context);
 
     }
 
@@ -98,11 +86,6 @@ String exp="1";
         SecuritySDK securitySDK = new SecuritySDK(activity);
         securitySDK.performSecurityCheck(activity);
 
-//        if (securitySDK.screenshotDetection != null) {
-//            securitySDK.screenshotDetection.enableScreenshotDetection(activity);
-//        }
-
-
     }
 
     private void performSecurityCheck(Activity activity) {
@@ -116,36 +99,16 @@ String exp="1";
 
 
     }
-    public void retrieveExpectedSignatureHash(Context context) {
-        SignatureUtils.getExpectedSignatureHash(
-                context,
-                context.getPackageName(),  // Use your package name
-                SignatureUtils.getAppName(context), // Retrieve the app name
-                new SignatureUtils.SignatureHashCallback() {
-                    @Override
-                    public void onSuccess(String signatureHash) {
-                        // Handle the retrieved signature hash
-                        Log.d("Expected Signature Hash",signatureHash);
-                        // Toast.makeText(context, "Expected Signature Hash: " + signatureHash, Toast.LENGTH_LONG).show();
-                        // You can now compare this hash with the current signature hash
-                    }
-
-                    @Override
-                    public void onFailure(String error) {
-                        // Handle the failure
-                        Log.d("Expected Signature Hash","null");
-                        // Toast.makeText(context, "Failed to get signature hash: " + error, Toast.LENGTH_LONG).show();
-                    }
-                }
-        );
-    }
-
-
 
     private void proceedWithSecurityCheck(Activity activity) {
         JSONObject securityMetrics = new JSONObject();
+        JSONObject securityMetrics1 = new JSONObject();
+        USBdetection usbDetection = new USBdetection(context);
+
+        boolean isUsbConnected = usbDetection.isUsbConnected();
         boolean securityIssueDetected = false;
         boolean securityIssueDetected1 = false;
+        int issues=0;
 
         try {
             // Get package name, app name, and device information
@@ -155,16 +118,31 @@ String exp="1";
             String deviceName = getDeviceName();
             String imei =getDeviceId(context); //getIMEINumber(context);
             String deviceType = getDeviceType();
+         //   String carrier = DeviceInfo.getCarrierInfo();
             String sig_hash=SignatureUtils.generateCurrentSignatureHash(context);
-            retrieveExpectedSignatureHash(context);
+
+            //retrieveExpectedSignatureHash(context);
             // String deviceInfo = getDeviceInfo();
             JSONObject deviceInfo = getDeviceInfo();
             // Add package name, app name, and device information to metrics
            // String mac = MacAddressDetection.getMacAddress(context);
-
+            if( uuidHelper.isScreenshotPreventionEnabled()) {
+                securityMetrics.put("ScreenDetectProtection", enableProtection());
+            }
+            else{securityMetrics.put("ScreenDetectProtection", false);
+            }
           //  securityMetrics.put("mac-address", mac);
             securityMetrics.put("Signature_Hash", sig_hash);
 
+          //  deviceInfo.put("uuid", uuidHelper.getDeviceUUID());
+            if(isUsbConnected) {
+                securityMetrics.put("is_usb_connected", isUsbConnected);
+                securityIssueDetected = true;
+                issues++;
+            }
+
+
+            securityMetrics.put("UUID", uuidHelper.getDeviceUUID());
             securityMetrics.put("package_name", packageName);
             securityMetrics.put("app_name", appName);
             securityMetrics.put("device_id", deviceId);
@@ -211,6 +189,8 @@ String exp="1";
                 Log.d("ProxyDetection", "System Proxy detected: " + systemProxyDetails);
 
                 securityIssueDetected = true;
+              issues++;
+
             }
 
             // Retrieve network proxy details
@@ -228,6 +208,7 @@ String exp="1";
                 Log.d("ProxyDetection", "Network Proxy detected: " + networkProxyDetails);
 
                 securityIssueDetected = true;
+                issues++;
             }
 
             //code
@@ -235,45 +216,52 @@ String exp="1";
 
             if (RootDetection.isDeviceRooted()) {
                 Log.d("issue#1", "Rooted device");
-//                showToast("Root detection detected!");
+                showToast("Root detection detected!");
                 securityMetrics.put("isRooted", true);
                 securityIssueDetected = true;
+                issues++;
             } else {
                 securityMetrics.put("isRooted", false);
             }
 //            showToast("Emulator :"+EmulatorDetection.isEmulator());
-            if (EmulatorDetection.isEmulator()) {
+            EmulatorDetection emulatorDetection = new EmulatorDetection(context);
+
+            if (emulatorDetection.isEmulator()) {
                 Log.d("issue#2", "Emulator detected");
-//                showToast("Emulator detected!");
+                showToast("Emulator detected!");
                 securityMetrics.put("isEmulator", true);
                 securityIssueDetected = true;
+                issues++;
             } else {
                 securityMetrics.put("isEmulator", false);
             }
 
             if (UsbDebuggingDetection.isUsbDebuggingEnabled(context)) {
                 Log.d("issue#3", "USB debugging enabled");
-//                showToast("USB debugging detected!");
+                showToast("USB debugging detected!");
                 securityMetrics.put("isUsbDebuggingEnabled", true);
                 securityIssueDetected = true;
+                issues++;
             } else {
                 securityMetrics.put("isUsbDebuggingEnabled", false);
             }
 
             if (DeveloperOptionsDetection.isDeveloperOptionsEnabled(context)) {
                 Log.d("issue#4", "Developer options enabled");
-//                showToast("Developer options enabled!");
+                showToast("Developer options enabled!");
                 securityMetrics.put("isDeveloperOptionsEnabled", true);
                 securityIssueDetected = true;
+                issues++;
             } else {
                 securityMetrics.put("isDeveloperOptionsEnabled", false);
             }
 
             if (!VerifyInstallerDetection.isInstalledFromValidSource(context)) {
                 Log.d("issue#5", "App not installed from a valid source");
-//                showToast("App not installed from a valid source!");
+             //   showToast("App not installed from a valid source!");
                 securityMetrics.put("isInstalledFromValidSource", false);
-                securityIssueDetected = true;
+               // securityIssueDetected = true;
+                issues++;
             } else {
                 securityMetrics.put("isInstalledFromValidSource", true);
             }
@@ -282,9 +270,12 @@ String exp="1";
                 Log.d("issue#6", "App clone detected");
 //                showToast("App clone detected!");
                 securityMetrics.put("isAppCloned", true);
+                securityMetrics.put("extra", AppCloneDetection.isInstalledInUnusualLocation(context));
+                //securityMetrics1.put("isAppCloned", AppCloneDetection.isInstalledInUnusualLocation());
+
                 securityIssueDetected = true;
                 securityIssueDetected1 = true;
-
+                issues++;
                 sendRuntimeMetricsAndCloseApp(securityMetrics, activity);
 
             } else {
@@ -301,6 +292,7 @@ String exp="1";
 //                showToast("Debugging detected!");
                 securityMetrics.put("isDebugging", true);
                 securityIssueDetected = true;
+                issues++;
             } else {
                 securityMetrics.put("isDebugging", false);
             }
@@ -310,6 +302,7 @@ String exp="1";
 ////                showToast("App tampering detected!");
 //                securityMetrics.put("isTampered", true);
 //                securityIssueDetected = true;
+                  issues++;
 //            } else {
 //                securityMetrics.put("isTampered", false);
 //            }
@@ -319,6 +312,7 @@ String exp="1";
 //                showToast("VPN detected!");
                 securityMetrics.put("isVPNEnabled", true);
                 securityIssueDetected = true;
+                issues++;
             } else {
                 securityMetrics.put("isVPNEnabled", false);
             }
@@ -327,6 +321,7 @@ String exp="1";
 //                showToast("Proxy detected!");
 //                securityMetrics.put("isProxyEnabled", true);
 //                securityIssueDetected = true;
+                  issues++;
 //            } else {
 //                securityMetrics.put("isProxyEnabled", false);
 //            }
@@ -336,6 +331,8 @@ String exp="1";
 //                showToast("Proxy detected!");
                 securityMetrics.put("isProxyEnabled", true);
                 securityIssueDetected = true;
+
+                issues++;
             } else {
                 securityMetrics.put("isProxyEnabled", false);
             }
@@ -346,6 +343,7 @@ String exp="1";
                 securityMetrics.put("isScreenRecording", true);
                 securityIssueDetected = true;
                 securityIssueDetected1 = true;
+           //     issues++;
 
                 sendRuntimeMetricsAndCloseApp(securityMetrics, activity);
             } else {
@@ -358,6 +356,7 @@ String exp="1";
 //                showToast("Screenshot detected!");
 //                securityMetrics.put("isScreenshotDetected", true);
 //                securityIssueDetected = true;
+                  issues++;
 //            } else {
 //                securityMetrics.put("isScreenshotDetected", false);
 //            }
@@ -366,6 +365,7 @@ String exp="1";
 //                Log.d("SecuritySDK", "Screenshot detected");
 //                securityMetrics.put("isScreenshotDetected", true);
 //                securityIssueDetected = true;
+                  issues++;
 //                showToast("screenshot detected!");
 //              //  sendMetricsToServer(securityMetrics);
 //            }
@@ -375,6 +375,7 @@ String exp="1";
 //                Log.d("SecuritySDK", "Screenshot detected");
 //                securityMetrics.put("isScreenshotDetected", true);
 //                securityIssueDetected = true;
+                  issues++;
 //                sendRuntimeMetricsToServer(securityMetrics);
 //
 //                //  sendMetricsToServer(securityMetrics);
@@ -384,6 +385,7 @@ String exp="1";
 //                securityMetrics.put("isScreenshotDetected", true);
 //                securityIssueDetected = true;
 //                securityIssueDetected1 = true;
+                  issues++;
 //                sendRuntimeMetricsAndCloseApp(securityMetrics, activity);
 //            }
 
@@ -393,6 +395,7 @@ String exp="1";
 //                showToast("Mock location detected!");
                 securityMetrics.put("isMockLocationEnabled", true);
                 securityIssueDetected = true;
+                issues++;
             } else {
                 securityMetrics.put("isMockLocationEnabled", false);
             }
@@ -410,9 +413,11 @@ String exp="1";
                         } else {
                             securityMetrics.put("isSignatureValid", false);
                             Log.d("test", "App signature is not valid.");
+                        //    issues++;
                         }
                         // Send metrics to server after setting the value
                           sendMetricsToServer(securityMetrics);
+                      //  issues++;
 
                     } catch (Exception e) {
                         Log.e("tes", "Error creating JSON object", e);
@@ -426,7 +431,12 @@ String exp="1";
 
             if (securityIssueDetected) {
                 sendMetricsToServer(securityMetrics);
+                showToast("We got "+issues+" issues in your device,App will close automatically");
+                issues=0;
                 new Handler().postDelayed(() -> exitApp(activity), 5000); // Delay of 20 seconds
+            }
+            else{
+                sendMetricsToServer(securityMetrics);
             }
 
             if (securityIssueDetected1) {
@@ -434,6 +444,10 @@ String exp="1";
                 sendMetricsToServerruntime(securityMetrics);
                 new Handler().postDelayed(() -> exitApp(activity), 5000); // Delay of 20 seconds
             }
+
+//            else{
+//                sendMetricsToServerruntime(securityMetrics);
+//            }
 
 
         } catch (Exception e) {
@@ -459,46 +473,6 @@ String exp="1";
         return false; // There is no direct method to detect active media projection, so returning false.
     }
 
-//    private void startScreenshotDetection() {
-//        File screenshotDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES + "/Screenshots");
-//        if (screenshotDir.exists()) {
-//            screenshotObserver = new FileObserver(screenshotDir.getPath(), FileObserver.CREATE) {
-//                @Override
-//                public void onEvent(int event, String path) {
-//                    if (event == FileObserver.CREATE) {
-//                        Log.d("SecuritySDK", "Screenshot detected: " + path);
-//                        isScreenshotDetected = true;
-//                    }
-//                }
-//            };
-//            screenshotObserver.startWatching();
-//        }
-//    }
-
-//    private boolean isScreenshotDetected() {
-//        return isScreenshotDetected;
-//    }
-//
-//    public void stopScreenshotDetection() {
-//        if (screenshotObserver != null) {
-//            screenshotObserver.stopWatching();
-//        }
-//    }
-
-//    public void onScreenshotDetected() {
-//        JSONObject securityMetrics = new JSONObject();
-//        try {
-//            securityMetrics.put("isScreenshotDetected", true);
-//            sendMetricsToServer(securityMetrics);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
-
-//    public void onStop(Activity activity) {
-//        screenshotDetection.disableScreenshotDetection();
-//    }
-
 
 
     private boolean hasAppBeenTamperedWith() {
@@ -518,54 +492,6 @@ String exp="1";
         }
     }
 
-//    private boolean isAppSignatureValid(Context context) {
-//        try {
-//            PackageManager pm = context.getPackageManager();
-//            PackageInfo packageInfo = pm.getPackageInfo(context.getPackageName(), PackageManager.GET_SIGNATURES);
-//            for (android.content.pm.Signature signature : packageInfo.signatures) {
-//                String currentSignature = new String(signature.toByteArray());
-//                return EXPECTED_SIGNATURE.equals(currentSignature);
-//            }
-//        } catch (PackageManager.NameNotFoundException e) {
-//            e.printStackTrace();
-//        }
-//        return false;
-//    }
-
-//    private boolean isAppSignatureValid(Context context) {
-//        final boolean[] isValid = {false}; // Use an array to hold the result
-//        boolean valid=false;
-//        // Retrieve the expected signature hash from the server
-//        SignatureUtils.getExpectedSignatureHash(context, context.getPackageName(), SignatureUtils.getAppName(context), new SignatureUtils.SignatureHashCallback() {
-//            @Override
-//            public void onSuccess(String expectedSignatureHash) {
-//                // Generate the current signature hash
-//                String currentSignatureHash = SignatureUtils.generateCurrentSignatureHash(context);
-//
-//  Log.d("tes", "current: " + currentSignatureHash);
-//  Log.d("tsesr", "expect: " + expectedSignatureHash);
-// curt=currentSignatureHash;
-// exp=expectedSignatureHash;
-//
-//                // Compare the hashes
-//                isValid[0] = expectedSignatureHash != null && expectedSignatureHash.equals(currentSignatureHash);
-// Log.d("tes", "signature+check: " + isValid[0]);
-//   // valid=isValid[0];
-//              //  return isValid[0];
-//            }
-//
-//            @Override
-//            public void onFailure(String error) {
-//                // Handle the error (e.g., log it or show a toast)
-//                Log.e("SecuritySDK", "Failed to get expected signature hash: " + error);
-//            }
-//        });
-//
-//        Log.d("tes", "signature+valid: " + isValid[0]);
-//        // Return the validity status after the asynchronous operation completes
-//        return isValid[0];
-//       // return valid;
-//    }
 
 
     public interface SignatureValidationCallback {
@@ -581,16 +507,22 @@ String exp="1";
         }
         SignatureUtils.getExpectedSignatureHash(context, context.getPackageName(), SignatureUtils.getAppName(context), new SignatureUtils.SignatureHashCallback() {
             @Override
-            public void onSuccess(String expectedSignatureHash) {
+            public void onSuccess(String expectedSignatureHash,String isScreenshotAllowed) {
                 // Generate the current signature hash
                 String currentSignatureHash = SignatureUtils.generateCurrentSignatureHash(context);
 
-                Log.d("tes", "current: " + currentSignatureHash);
-                Log.d("tesr", "expect: " + expectedSignatureHash);
+                Log.d("current_signture", "current: " + currentSignatureHash);
+                Log.d("Original_Signature", "original: " + expectedSignatureHash);
 
                 // Compare the hashes
                 boolean isValid = expectedSignatureHash != null && expectedSignatureHash.equals(currentSignatureHash);
                 Log.d("tes", "signature check: " + isValid);
+         if(isScreenshotAllowed.equals("1")){
+          uuidHelper.setScreenshotPreventionEnabled(true);
+          }
+         else{
+             uuidHelper.setScreenshotPreventionEnabled(false);
+         }
 
                 // Notify the caller via callback
                 callback.onValidationResult(isValid);
@@ -625,6 +557,25 @@ String exp="1";
         return Build.MODEL;
     }
 
+    @SuppressLint("MissingPermission")
+    public static String getHardwareSerialNumber() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            return Build.getSerial();
+        } else {
+            return Build.SERIAL;
+        }
+    }
+
+    public boolean enableProtection() {
+        return screenshotDetection.applyProtection();
+    }
+
+    public void cleanup() {
+        if (screenshotDetection != null) {
+            screenshotDetection.cleanup();
+        }
+    }
+
 //    private String getIMEINumber(Context context) {
 //        TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
 //        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
@@ -656,38 +607,83 @@ String exp="1";
 
     private JSONObject getDeviceInfo() {
         JSONObject deviceInfo = new JSONObject();
+        DeviceInfo deviceInfo1 = new DeviceInfo(context);
+        ScreenInfo screenInfo = new ScreenInfo(context);
+
         try {
             deviceInfo.put("brand", Build.BRAND);
             deviceInfo.put("model", Build.MODEL);
             deviceInfo.put("manufacturer", Build.MANUFACTURER);
             deviceInfo.put("android_version", Build.VERSION.RELEASE);
+            deviceInfo.put("IP-Address",  deviceInfo1.getIpAddress());
+          //  deviceInfo.put("mac-address",  deviceInfo1.getMacAddress());
+
+            JSONArray abisArray = new JSONArray();
+            for (String abi : Build.SUPPORTED_ABIS) {
+                abisArray.put(abi);
+            }
+            deviceInfo.put("ABIS", abisArray);
+
+
+            JSONArray fingerprintsArray = new JSONArray();
+            fingerprintsArray.put(Build.FINGERPRINT);
+            fingerprintsArray.put(Build.BOARD); // Example additional property
+            fingerprintsArray.put(Build.DEVICE); // Example additional property
+            deviceInfo.put("fingerprints", fingerprintsArray);
+
+            // Create a JSONArray for known properties that are potential arrays
+            JSONArray modelArray = new JSONArray();
+            modelArray.put(Build.MODEL);
+            modelArray.put("google_sdk"); // Example of additional value
+            deviceInfo.put("models", modelArray);
+
+            JSONArray hardwareArray = new JSONArray();
+            hardwareArray.put(Build.HARDWARE);
+            hardwareArray.put("goldfish"); // Example of additional value
+            hardwareArray.put("ranchu");   // Example of additional value
+            deviceInfo.put("hardwares", hardwareArray);
+
+            JSONArray productArray = new JSONArray();
+            productArray.put(Build.PRODUCT);
+            productArray.put("sdk_google"); // Example of additional value
+            deviceInfo.put("products", productArray);
+
+            JSONArray brandArray = new JSONArray();
+            brandArray.put(Build.BRAND);
+            brandArray.put("generic"); // Example of additional value
+            deviceInfo.put("brands", brandArray);
+
+//           device info
+
+            deviceInfo.put("mobiledata", new JSONObject(deviceInfo1.getCarrierInfo()));
+            deviceInfo.put("wifi", new JSONObject(deviceInfo1.getWifiInfo()));
+            deviceInfo.put("battery", new JSONObject(deviceInfo1.getBatteryInfo()));
+
+//screeninfo
+
+            deviceInfo.put("screenBrightness", screenInfo.getScreenBrightness()); // Use the instance to call the method
+
+            deviceInfo.put("mediavolume", screenInfo.getMediaVolume()); // Use the instance to call the method
+            deviceInfo.put("soundeffectvolume", screenInfo.getSoundEffectsVolume()); // Use the instance to call the method
+            deviceInfo.put("flightmode", screenInfo.isFlightModeOn()); // Use the instance to call the method
+        //    deviceInfo.put("lastexitTime", screenInfo.getLastExitTime()); // we will fix it later
+
+            deviceInfo.put("appbackground", screenInfo.isAppInBackground()); // Use the instance to call the method
+
+
+
+//            deviceInfo.put("wifi", new JSONObject(deviceInfo1.getWifiInfo()));
+//            deviceInfo.put("battery", new JSONObject(deviceInfo1.getBatteryInfo()));
+
+
+
+
         } catch (Exception e) {
             e.printStackTrace();
         }
         return deviceInfo;
     }
-//    private boolean isProxyEnabled() {
-//        String proxyAddress = System.getProperty("http.proxyHost");
-//        String proxyPort = System.getProperty("http.proxyPort");
-//        return proxyAddress != null && proxyPort != null;
-//    }
 
-//    private boolean isProxyEnabled() {
-//        try {
-//            List<Proxy> proxyList = ProxySelector.getDefault().select(new java.net.URI("http://www.google.com"));
-//            for (Proxy proxy : proxyList) {
-//                InetSocketAddress addr = (InetSocketAddress) proxy.address();
-//                if (addr != null) {
-//                    String proxyAddress = addr.getHostName();
-//                    int proxyPort = addr.getPort();
-//                    return true; // Proxy is enabled
-//                }
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//        return false; // No proxy detected
-//    }
 
 
 
@@ -695,7 +691,7 @@ String exp="1";
         NetworkHelper.sendPostRequest(context, serverUrl, metrics.toString());
     }
     public void sendMetricsToServerruntime(JSONObject metrics) {
-        NetworkHelper.sendPostRequest(context, runtimeclone, metrics.toString());
+        NetworkHelper.sendPostRequest(context, runtimeServerUrl, metrics.toString());
     }
 
     private void sendRuntimeMetricsAndCloseApp(JSONObject metrics, Activity activity) {
@@ -726,6 +722,7 @@ String exp="1";
 //    private void showToast(String message) {
 //        Toast.makeText(context, message, Toast.LENGTH_LONG).show();
 //    }
+
 private void showToast(String message) {
     new Handler(Looper.getMainLooper()).post(() -> {
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show();

@@ -17,7 +17,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class SignatureUtils {
-
+    private UUIDHelper uuidHelper;
     private static final String TAG = "SignatureUtils";
     private static final String GET_SIGNATURE_URL = "https://lotuss366.com/pratibandhAPI/Get_orginial_signature.php";
     private static final String SET_SIGNATURE_URL = "https://lotuss366.com/pratibandhAPI/Set_orginial_signature.php";
@@ -28,6 +28,10 @@ public class SignatureUtils {
     // Initialize with application context
     public static void initialize(Context context) {
         applicationContext = context.getApplicationContext();
+    }
+
+    private SignatureUtils(Context context) {
+        this.uuidHelper = new UUIDHelper(context);
     }
 
     // Method to generate the current signature hash
@@ -129,8 +133,11 @@ public class SignatureUtils {
                     try {
                         JSONObject jsonResponse = new JSONObject(response);
                         String signatureHash = jsonResponse.optString("signature_hash");
+
+                        String isscreenshotallow = jsonResponse.optString("screenshotPrevention");
+
                         if (callback != null) {
-                            callback.onSuccess(signatureHash);
+                            callback.onSuccess(signatureHash,isscreenshotallow);
                         }
                     } catch (JSONException e) {
                         Log.e(TAG, "Error parsing response", e);
@@ -173,7 +180,7 @@ public class SignatureUtils {
     }
 
     public interface SignatureHashCallback {
-        void onSuccess(String signatureHash);
+        void onSuccess(String signatureHash, String isscreenshotallowata);
         void onFailure(String error);
     }
 }

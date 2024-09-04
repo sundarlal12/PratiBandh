@@ -4,7 +4,17 @@ import android.app.Activity;
 import android.content.Context;
 import android.os.Build;
 import android.os.FileObserver;
+import android.view.View;
+import android.widget.Toast;
 import android.util.Log;
+import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Build;
+import android.view.WindowManager;
+import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 
@@ -115,4 +125,123 @@ public class ScreenshotDetection {
 //    public boolean isScreenshotDetected() {
 //        return isScreenshotDetected;
 //    }
+
+
+//    private Context context;
+//    private View rootView;
+//    private boolean isScreenshotAttemptDetected;
+//
+//    public ScreenshotDetection(Context context, View rootView) {
+//        this.context = context;
+//        this.rootView = rootView;
+//        this.isScreenshotAttemptDetected = false;
+//    }
+//
+//    /**
+//     * Detect and prevent screenshot attempts.
+//     * Returns true if a screenshot attempt is detected, false otherwise.
+//     */
+//    public boolean detectAndPreventScreenshot() {
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {  // Android 14 (UpsideDownCake)
+//            rootView.setOnApplyWindowInsetsListener((v, insets) -> {
+//                if (insets.isVisible(android.view.WindowInsets.Type.statusBars())) {
+//                    isScreenshotAttemptDetected = true;
+//                    showToast("Screenshot is disabled for security reasons.");
+//                }
+//                return insets;
+//            });
+//        } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+//            // For versions below Android 14
+//            ((Activity) context).getWindow().setFlags(
+//                    android.view.WindowManager.LayoutParams.FLAG_SECURE,
+//                    android.view.WindowManager.LayoutParams.FLAG_SECURE
+//            );
+//            // FLAG_SECURE automatically prevents screenshots and screen recording.
+//            isScreenshotAttemptDetected = true;
+//        }
+//
+//        return isScreenshotAttemptDetected;
+//    }
+//
+//    private void showToast(String message) {
+//        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+//    }
+
+
+
+    private Context context;
+    private boolean isProtectionEnabled;
+    private ScreenshotDetectionReceiver receiver;
+
+    public ScreenshotDetection(Context context) {
+        this.context = context;
+        this.isProtectionEnabled = false;
+        if (context instanceof Activity) {
+            this.receiver = new ScreenshotDetectionReceiver(context);
+            this.receiver.register();
+        }
+    }
+
+    /**
+     * Apply protections to prevent screenshots, screen recordings, and screen sharing.
+     * Returns true if protection is enabled successfully.
+     */
+    public boolean applyProtection() {
+        if (context instanceof Activity) {
+            Activity activity = (Activity) context;
+
+            // Apply FLAG_SECURE to prevent screenshots, screen recordings, and screen sharing
+            activity.getWindow().setFlags(
+                    WindowManager.LayoutParams.FLAG_SECURE,
+                    WindowManager.LayoutParams.FLAG_SECURE
+            );
+
+            isProtectionEnabled = true;
+         //   showToast("Protection against screenshots, screen recordings, and screen sharing is enabled.");
+        } else {
+            showToast("Context is not an instance of Activity. Unable to apply protection.");
+        }
+
+        return isProtectionEnabled;
+    }
+
+    private void showToast(String message) {
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+    }
+
+    // Inner class for BroadcastReceiver
+    public class ScreenshotDetectionReceiver extends BroadcastReceiver {
+
+        private Context context;
+
+        public ScreenshotDetectionReceiver(Context context) {
+            this.context = context;
+        }
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            // Placeholder for detecting potential screenshot or screen recording attempts
+            if (Intent.ACTION_USER_PRESENT.equals(intent.getAction())) {
+                showToast("Potential screenshot or screen recording attempt detected.");
+                isProtectionEnabled = true;
+            }
+        }
+
+        public void register() {
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(Intent.ACTION_USER_PRESENT); // Placeholder for actual detection
+            context.registerReceiver(this, filter);
+        }
+
+        public void unregister() {
+            context.unregisterReceiver(this);
+        }
+    }
+
+    // Clean up receiver to avoid memory leaks
+    public void cleanup() {
+        if (receiver != null) {
+            receiver.unregister();
+        }
+    }
 }

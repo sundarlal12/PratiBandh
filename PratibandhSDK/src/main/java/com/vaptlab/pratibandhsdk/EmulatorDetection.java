@@ -1,78 +1,116 @@
 package com.vaptlab.pratibandhsdk;
 
+import android.content.Context;
 import android.os.Build;
 import java.io.File;
 
 public class EmulatorDetection {
 
-    public static boolean isEmulator() {
-        return isGenericBuild() || isKnownModel() || isKnownHardware() || isEmulatedBrand()
-                || isEmulatorFromFileSystem() || isEmulatorFromRadio()
-                || isEmulatorFromCpu() || isEmulatorFromFingerprint();
+    private Context context;
+
+    public EmulatorDetection(Context context) {
+        this.context = context;
     }
 
-    private static boolean isGenericBuild() {
+    public boolean isEmulator() {
+        return isGenericBuild() || isKnownModel() || isKnownHardware()
+                || isEmulatorFromFileSystem() || isEmulatorFromRadio()
+                 || isEmulatorFromFingerprint() || isEmulatorFromApps() || isEmulatorFromCpu();// ||isEmulatedBrand();
+    }
+
+    public boolean isGenericBuild() {
         return Build.FINGERPRINT.startsWith("generic")
                 || Build.FINGERPRINT.startsWith("unknown")
                 || Build.MODEL.contains("google_sdk")
                 || Build.MODEL.toLowerCase().contains("droid4x")
                 || Build.MODEL.contains("Emulator")
                 || Build.MODEL.contains("Android SDK built for x86")
-                || Build.PRODUCT.contains("sdk_gphone")  // Add gphone detection
+                || Build.PRODUCT.contains("sdk_gphone")
                 || Build.PRODUCT.contains("sdk_google");
     }
 
-    private static boolean isKnownModel() {
+    public boolean isKnownModel() {
         return Build.MODEL.equalsIgnoreCase("google_sdk")
                 || Build.MODEL.equalsIgnoreCase("Android SDK built for x86")
                 || Build.MODEL.contains("droid4x");
     }
 
-    private static boolean isKnownHardware() {
+    public boolean isKnownHardware() {
         return Build.HARDWARE.contains("goldfish")
                 || Build.HARDWARE.contains("ranchu")
                 || Build.BRAND.equalsIgnoreCase("generic")
                 || Build.DEVICE.equalsIgnoreCase("generic")
                 || Build.BOARD.equalsIgnoreCase("goldfish")
                 || Build.BOARD.equalsIgnoreCase("ranchu")
-                || Build.HARDWARE.contains("qemu")  // Add QEMU detection
-                || Build.HARDWARE.contains("vbox86"); // Add VirtualBox detection
+                || Build.HARDWARE.contains("qemu")
+                || Build.HARDWARE.contains("vbox86");
     }
 
-    private static boolean isEmulatedBrand() {
-        return Build.MANUFACTURER.equalsIgnoreCase("unknown")
-                || Build.BRAND.equalsIgnoreCase("generic")
-                || Build.SERIAL.equalsIgnoreCase("unknown")
-                || Build.SERIAL.toLowerCase().contains("emulator")
-                || Build.PRODUCT.contains("sdk_google")
-                || Build.PRODUCT.contains("generic");
-    }
+//    public boolean isEmulatedBrand() {
+//        return Build.MANUFACTURER.equalsIgnoreCase("unknown")
+//                || Build.BRAND.equalsIgnoreCase("generic")
+//                || Build.SERIAL.equalsIgnoreCase("unknown")
+//                || Build.PRODUCT.contains("google_sdk")
+//                || Build.PRODUCT.contains("sdk")
+//                || Build.DEVICE.contains("generic")
+//                || Build.DEVICE.contains("unknown")
+//                || Build.MODEL.contains("sdk")
+//                || Build.MODEL.contains("emulator");
+//    }
 
-    private static boolean isEmulatorFromFileSystem() {
+    public boolean isEmulatorFromFileSystem() {
         return new File("/system/bin/su").exists() || new File("/system/xbin/su").exists()
-                || new File("/system/bin/qemu-props").exists();  // Add QEMU props check
+                || new File("/system/bin/qemu-props").exists();
     }
 
-    private static boolean isEmulatorFromRadio() {
+    public boolean isEmulatorFromRadio() {
         String radio = Build.getRadioVersion();
-        return radio != null && (radio.contains("generic") || radio.contains("unknown"));
+        return radio != null && (radio.contains("generic") || radio.contains("unknown") || radio.contains("emulator"));
     }
 
-    private static boolean isEmulatorFromCpu() {
-        String cpuAbi = Build.SUPPORTED_ABIS[0];
-        return cpuAbi.contains("x86") || cpuAbi.contains("armeabi-v7a")
-                || Build.SUPPORTED_ABIS.length > 1 && Build.SUPPORTED_ABIS[1].contains("x86");
+    public boolean isEmulatorFromCpu() {
+        String[] cpuAbis = Build.SUPPORTED_ABIS;
+        boolean hasEmulatorAbi = false;
+
+        // Look for known emulator ABIs
+        for (String abi : cpuAbis) {
+            if (abi.contains("x86") || abi.contains("x86_64") || abi.contains("armeabi-v7a") || abi.contains("arm64-v8a")) {
+                hasEmulatorAbi = true;
+            }
+        }
+
+        // Further checks for emulators (e.g., ABI + other known emulated device attributes)
+        if (hasEmulatorAbi) {
+            // Perform additional checks if necessary, e.g., Build.PRODUCT, Build.BRAND
+            return Build.BRAND.startsWith("generic") || Build.DEVICE.startsWith("generic") || Build.PRODUCT.contains("sdk");
+        }
+
+        return false;
     }
 
-    private static boolean isEmulatorFromFingerprint() {
+    public boolean isEmulatorFromFingerprint() {
         return Build.FINGERPRINT.startsWith("generic")
                 || Build.FINGERPRINT.startsWith("unknown")
                 || Build.FINGERPRINT.contains("vbox")
                 || Build.FINGERPRINT.contains("google_sdk")
                 || Build.FINGERPRINT.contains("generic_x86")
                 || Build.FINGERPRINT.contains("generic_x86_64")
+                || Build.FINGERPRINT.contains("sdk_google")
                 || Build.FINGERPRINT.contains("vbox86p")
-                || Build.FINGERPRINT.contains("generic_x86_64")
-                || Build.FINGERPRINT.contains("sdk_google");
+                || Build.FINGERPRINT.contains("generic_x86_64");
+    }
+
+    public boolean isEmulatorFromApps() {
+        // Check for presence of emulator apps or services
+        String[] knownEmulators = {"com.android.emulator", "com.google.android.emulator"};
+        for (String app : knownEmulators) {
+            try {
+                context.getPackageManager().getPackageInfo(app, 0);
+                return true;
+            } catch (Exception e) {
+                // Package not found, continue
+            }
+        }
+        return false;
     }
 }
