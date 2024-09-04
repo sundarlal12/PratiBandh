@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.github.sundarlal12</groupId>
     <artifactId>PratiBandh</artifactId>
-    <version>1.0.5</version>
+    <version>1.0.6</version>
     <packaging>pom</packaging>
     <description>PratiBandh SDK</description>
 </project>
