@@ -1,5 +1,5 @@
 # configuration file for building snapshots and releases with jitpack.io
-#yes
+#added some files
 jdk:
   - openjdk17
 before_install:
