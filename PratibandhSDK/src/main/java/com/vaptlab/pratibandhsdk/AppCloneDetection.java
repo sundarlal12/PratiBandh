@@ -111,7 +111,10 @@ public class AppCloneDetection {
                 "com.parallel.space",
                 "com.dual.parallel.multiaccounts",
                 "com.lbe.parallel.intl",
-                "com.cloneapp.parallelspace.dualspace"
+                "com.cloneapp.parallelspace.dualspace",
+                // Add more common clone apps
+                "com.multi.clone",
+                "com.isocial.fakeapp" // Example for extra clone app detection
         };
 
         for (String cloneApp : knownCloneApps) {
@@ -122,7 +125,6 @@ public class AppCloneDetection {
         }
         return false;
     }
-
     /**
      * Check if the app is installed in an unusual location, which might indicate a cloned app.
      */
@@ -148,7 +150,6 @@ public class AppCloneDetection {
 
         return false;
     }
-
 
     /**
      * Check if certain system properties indicate a dual app or cloned environment.

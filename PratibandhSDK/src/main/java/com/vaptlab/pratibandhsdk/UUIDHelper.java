@@ -34,29 +34,63 @@ public class UUIDHelper {
         return uuid;
     }
 
+//    public String generateDeviceUUID() {
+//        String deviceId = getDeviceId();
+//        String deviceInfo = Build.BRAND + Build.MODEL + Build.DEVICE + Build.VERSION.RELEASE + deviceId;
+//        try {
+//            MessageDigest md = MessageDigest.getInstance("SHA-256");
+//            byte[] hash = md.digest(deviceInfo.getBytes());
+//
+//            // Convert hash to base 36 (0-9, a-z)
+//            String base36Hash = new java.math.BigInteger(1, hash).toString(36);
+//
+//            // Ensure the length is exactly 29 characters
+//            if (base36Hash.length() > 29) {
+//                return base36Hash.substring(0, 29);
+//            } else {
+//                // Pad with zeros if less than 29 characters
+//                return String.format("%1$-" + 29 + "s", base36Hash).replace(' ', '0');
+//            }
+//
+//        } catch (NoSuchAlgorithmException e) {
+//            e.printStackTrace();
+//            return UUID.randomUUID().toString().substring(0, 29); // Fallback with a trimmed UUID
+//        }
+//    }
+
     public String generateDeviceUUID() {
         String deviceId = getDeviceId();
         String deviceInfo = Build.BRAND + Build.MODEL + Build.DEVICE + Build.VERSION.RELEASE + deviceId;
         try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            MessageDigest md = MessageDigest.getInstance("SHA-256");  // Use SHA-256
             byte[] hash = md.digest(deviceInfo.getBytes());
 
-            // Convert hash to base 36 (0-9, a-z)
-            String base36Hash = new java.math.BigInteger(1, hash).toString(36);
+            // Convert hash to hexadecimal (base 16)
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) {
+                    hexString.append('0'); // Pad with a leading zero
+                }
+                hexString.append(hex);
+            }
 
             // Ensure the length is exactly 29 characters
-            if (base36Hash.length() > 29) {
-                return base36Hash.substring(0, 29);
+            String hexResult = hexString.toString();
+            if (hexResult.length() > 29) {
+                return hexResult.substring(0, 29);  // Truncate to 29 characters
             } else {
                 // Pad with zeros if less than 29 characters
-                return String.format("%1$-" + 29 + "s", base36Hash).replace(' ', '0');
+                return String.format("%1$-" + 29 + "s", hexResult).replace(' ', '0');
             }
 
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
-            return UUID.randomUUID().toString().substring(0, 29); // Fallback with a trimmed UUID
+            return UUID.randomUUID().toString().replace("-", "").substring(0, 29);  // Fallback if hashing fails
         }
     }
+
+
 
     private String getDeviceId() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

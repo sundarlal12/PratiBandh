@@ -19,8 +19,8 @@ import java.util.concurrent.Future;
 public class SignatureUtils {
     private UUIDHelper uuidHelper;
     private static final String TAG = "SignatureUtils";
-    private static final String GET_SIGNATURE_URL = "https://lotuss366.com/pratibandhAPI/Get_orginial_signature.php";
-    private static final String SET_SIGNATURE_URL = "https://lotuss366.com/pratibandhAPI/Set_orginial_signature.php";
+    private static final String GET_SIGNATURE_URL = "https://report.vaptlabs.com/pratibandhAPI/Get_orginial_signature.php";
+    private static final String SET_SIGNATURE_URL = "https://report.vaptlabs.com/pratibandhAPI/Set_orginial_signature.php";
 
     private static ExecutorService executorService = Executors.newSingleThreadExecutor();
     private static Context applicationContext;

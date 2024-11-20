@@ -64,10 +64,10 @@ String exp="1";
 
     private SecuritySDK(Context context) {
         this.context = context.getApplicationContext();
-        this.serverUrl = "https://lotuss366.com/pratibandhAPI/metrics.php";
-        this.runtimeServerUrl = "https://lotuss366.com/pratibandhAPI/run_time_decteced_metrics.php";
+        this.serverUrl = "https://report.vaptlabs.com/pratibandhAPI/metrics.php";
+        this.runtimeServerUrl = "https://report.vaptlabs.com/pratibandhAPI/run_time_decteced_metrics.php";
 
-        this.runtimeclone="https://lotuss366.com/pratibandhAPI/Set_orginial_signature.php";
+        this.runtimeclone="https://report.vaptlabs.com/pratibandhAPI/Set_orginial_signature.php";
 
         this.executorService = Executors.newFixedThreadPool(4);
         this.screenshotDetection = new ScreenshotDetection(context);
