@@ -1,53 +1,81 @@
 package com.vaptlab.pratibandhsdk;
-
-
 import android.annotation.SuppressLint;
 import android.content.Context;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import android.Manifest;
 import android.app.Activity;
+import android.opengl.GLSurfaceView;
 import android.os.Handler;
+
+import androidx.fragment.app.FragmentActivity;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.LifecycleObserver;
+import androidx.lifecycle.OnLifecycleEvent;
+import android.app.Activity;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Lifecycle;
+
 import android.os.Looper;
 import android.widget.Toast;
-
 import android.util.Log;
-
 import java.util.Map;
 import android.content.pm.ApplicationInfo;
-
 import android.content.pm.PackageManager;
 import android.media.projection.MediaProjectionManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Debug;
-
 import android.os.FileObserver;
-
 import android.provider.Settings;
-
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-
 import java.security.MessageDigest;
 import java.util.Arrays;
+
+
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.Manifest;
+import android.os.Handler;
+import android.os.Looper;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+
 //private ExecutorService executorService;
 public class SecuritySDK {
 String exp="1";
+    private static final String TAG = "SecuritySDK";
     String curt="2";
+    private static Activity activity;
+    private static GLSurfaceView mGLSurfaceView;  // Reference to GLSurfaceView
+    private static CustomAlertDialogFragment dialogFragment;
+
+    private Context context;
     private static final int PERMISSION_REQUEST_CODE = 100;
     private static SecuritySDK instance;
-    private Context context;
+   // private Context context;
     private String serverUrl;
     private String runtimeclone;
     private boolean isScreenshotDetected = false;
 
     private String runtimeServerUrl;
+    private String licenseKey;
 
 
     private UUIDHelper uuidHelper;
@@ -61,9 +89,10 @@ String exp="1";
    private ExecutorService executorService;
 
 
+    private SecuritySDK(Context context,String licenseKey) {
 
-    private SecuritySDK(Context context) {
-        this.context = context.getApplicationContext();
+    //    this.context = context.getApplicationContext();
+        this.context = context;
         this.serverUrl = "https://report.vaptlabs.com/pratibandhAPI/metrics.php";
         this.runtimeServerUrl = "https://report.vaptlabs.com/pratibandhAPI/run_time_decteced_metrics.php";
 
@@ -72,32 +101,53 @@ String exp="1";
         this.executorService = Executors.newFixedThreadPool(4);
         this.screenshotDetection = new ScreenshotDetection(context);
         this.uuidHelper = new UUIDHelper(context);
+        this.licenseKey = licenseKey;
+
+
 
     }
 
-    public static SecuritySDK getInstance(Context context) {
+    public static void initialize(Activity activity) {
+        SecuritySDK.activity = activity;
+        // Initialize OpenGL-related resources here if needed
+    }
+
+    public static SecuritySDK getInstance(Context context, String licenseKey) {
         if (instance == null) {
-            instance = new SecuritySDK(context);
+            instance = new SecuritySDK(context, licenseKey);
         }
         return instance;
     }
 
-    public static void initializeAndCheckSecurity(Activity activity) {
-        SecuritySDK securitySDK = new SecuritySDK(activity);
-        securitySDK.performSecurityCheck(activity);
 
-    }
+public static void initializeAndCheckSecurity(Activity activity, String licenseKey) {
+    SecuritySDK securitySDK = new SecuritySDK(activity, licenseKey);
+    securitySDK.performSecurityCheck(activity);
+}
+
 
     private void performSecurityCheck(Activity activity) {
+
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_NETWORK_STATE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_NETWORK_STATE}, PERMISSION_REQUEST_CODE);
+            // Request permission if not granted
+            ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_NETWORK_STATE}, 100);
         } else {
+            // Proceed with security check if permission is granted
             proceedWithSecurityCheck(activity);
         }
+    }
 
 
+    public void showAlert(Context context, String title,String message) {
+        // Use DialogHelper to show the alert dialog
+        DialogHelper.showCustomAlertDialog(context, message,title);
+    }
 
-
+    public void checkActivityLifecycle(Activity activity) {
+        // Log the activity lifecycle event (you can modify this based on what you need to do)
+        if (activity != null) {
+            Log.d(TAG, "Activity lifecycle checked for: " + activity.getClass().getSimpleName());
+        }
     }
 
     private void proceedWithSecurityCheck(Activity activity) {
@@ -126,6 +176,9 @@ String exp="1";
             JSONObject deviceInfo = getDeviceInfo();
             // Add package name, app name, and device information to metrics
            // String mac = MacAddressDetection.getMacAddress(context);
+
+            securityMetrics.put("LicenceKey",licenseKey);
+
             if( uuidHelper.isScreenshotPreventionEnabled()) {
                 securityMetrics.put("ScreenDetectProtection", enableProtection());
             }
@@ -138,6 +191,10 @@ String exp="1";
             if(isUsbConnected) {
                 securityMetrics.put("is_usb_connected", isUsbConnected);
                 securityIssueDetected = true;
+
+                showAlert(context,"It appears that the device is connected via USB. Kindly disconnect the USB and disable the developer options to continue using the app","USB debugging Enabled!!");
+
+
                 issues++;
             }
 
@@ -187,6 +244,7 @@ String exp="1";
                 }
 
                 Log.d("ProxyDetection", "System Proxy detected: " + systemProxyDetails);
+                showAlert(context,"This device appears to be connected to an unsecured network. For optimal security, it is recommended to connect to a secure network before continuing to use the app.","Proxy Server Detected!");
 
                 securityIssueDetected = true;
               issues++;
@@ -206,6 +264,7 @@ String exp="1";
                 }
 
                 Log.d("ProxyDetection", "Network Proxy detected: " + networkProxyDetails);
+                showAlert(context,"This device appears to be connected to an unsecured network. For optimal security, it is recommended to connect to a secure network before continuing to use the app.","Proxy Server Detected!");
 
                 securityIssueDetected = true;
                 issues++;
@@ -216,9 +275,13 @@ String exp="1";
 
             if (RootDetection.isDeviceRooted()) {
                 Log.d("issue#1", "Rooted device");
-                showToast("Root detection detected!");
+             //   showToast("Root detection detected!");
+
                 securityMetrics.put("isRooted", true);
                 securityIssueDetected = true;
+
+                showAlert(context,"This device has been identified as rooted. For optimal functionality and security, it is recommended to use this application on a non-rooted device.","Rooting Detected!");
+
                 issues++;
             } else {
                 securityMetrics.put("isRooted", false);
@@ -228,9 +291,12 @@ String exp="1";
 
             if (emulatorDetection.isEmulator()) {
                 Log.d("issue#2", "Emulator detected");
-                showToast("Emulator detected!");
+       //         showToast("Emulator detected!");
                 securityMetrics.put("isEmulator", true);
                 securityIssueDetected = true;
+                showAlert(context,"It appears that the app is running in an emulator environment. For an optimal user experience, we recommend using the app on a real device.","Emulator Detected!");
+
+
                 issues++;
             } else {
                 securityMetrics.put("isEmulator", false);
@@ -238,9 +304,12 @@ String exp="1";
 
             if (UsbDebuggingDetection.isUsbDebuggingEnabled(context)) {
                 Log.d("issue#3", "USB debugging enabled");
-                showToast("USB debugging detected!");
+  //              showToast("USB debugging detected!");
                 securityMetrics.put("isUsbDebuggingEnabled", true);
                 securityIssueDetected = true;
+
+                showAlert(context,"It appears that the device is connected via USB. Kindly disconnect the USB and disable the developer options to continue using the app","USB debugging Enabled!!");
+
                 issues++;
             } else {
                 securityMetrics.put("isUsbDebuggingEnabled", false);
@@ -248,9 +317,11 @@ String exp="1";
 
             if (DeveloperOptionsDetection.isDeveloperOptionsEnabled(context)) {
                 Log.d("issue#4", "Developer options enabled");
-                showToast("Developer options enabled!");
+     //           showToast("Developer options enabled!");
                 securityMetrics.put("isDeveloperOptionsEnabled", true);
                 securityIssueDetected = true;
+                showAlert(context,"It appears that the developer options are enabled on the device. Kindly disable the developer options to continue using the app. Thank you for your cooperation.","Developer Option Enabled!!");
+
                 issues++;
             } else {
                 securityMetrics.put("isDeveloperOptionsEnabled", false);
@@ -261,6 +332,8 @@ String exp="1";
              //   showToast("App not installed from a valid source!");
                 securityMetrics.put("isInstalledFromValidSource", false);
                // securityIssueDetected = true;
+                showAlert(context,"It appears that the app has not been installed from a valid source, such as the Play Store or Amazon Store. For security and optimal performance, please ensure the app is installed from a trusted source. Thank you.","Invalid trusted source!!");
+
                 issues++;
             } else {
                 securityMetrics.put("isInstalledFromValidSource", true);
@@ -272,6 +345,7 @@ String exp="1";
                 securityMetrics.put("isAppCloned", true);
                 securityMetrics.put("extra", AppCloneDetection.isInstalledInUnusualLocation(context));
                 //securityMetrics1.put("isAppCloned", AppCloneDetection.isInstalledInUnusualLocation());
+                showAlert(context,"It appears that the app is either cloned or running in an untrusted and unsecured environment. For security and optimal performance, it is recommended to use the app in a trusted and secure environment.","App Clone Detected!!");
 
                 securityIssueDetected = true;
                 securityIssueDetected1 = true;
@@ -292,6 +366,8 @@ String exp="1";
 //                showToast("Debugging detected!");
                 securityMetrics.put("isDebugging", true);
                 securityIssueDetected = true;
+                showAlert(context,"It appears that the device is connected via USB. Kindly disconnect the USB and disable the developer options to continue using the app","USB debugging Enabled!!");
+
                 issues++;
             } else {
                 securityMetrics.put("isDebugging", false);
@@ -311,6 +387,10 @@ String exp="1";
                 Log.d("issue#10", "VPN detected");
 //                showToast("VPN detected!");
                 securityMetrics.put("isVPNEnabled", true);
+
+                showAlert(context,"It appears that a VPN is enabled on your device. For optimal performance and security, please disable the VPN and try again. Thank you for your cooperation.","VPN Detected!!");
+
+
                 securityIssueDetected = true;
                 issues++;
             } else {
@@ -332,6 +412,9 @@ String exp="1";
                 securityMetrics.put("isProxyEnabled", true);
                 securityIssueDetected = true;
 
+                showAlert(context,"This device appears to be connected to an unsecured network. For optimal security, it is recommended to connect to a secure network before continuing to use the app.","Proxy Server Detected!");
+
+
                 issues++;
             } else {
                 securityMetrics.put("isProxyEnabled", false);
@@ -341,6 +424,9 @@ String exp="1";
                 Log.d("issue#11", "Screen recording detected");
 //                showToast("Screen recording detected!");
                 securityMetrics.put("isScreenRecording", true);
+
+                showAlert(context,"Screen recording has been detected on your device. For security and privacy reasons, please disable screen recording to continue using the app. Thank you for your understanding.","Screen Recording Detected!");
+
                 securityIssueDetected = true;
                 securityIssueDetected1 = true;
            //     issues++;
@@ -395,6 +481,9 @@ String exp="1";
 //                showToast("Mock location detected!");
                 securityMetrics.put("isMockLocationEnabled", true);
                 securityIssueDetected = true;
+
+                showAlert(context,"It appears that mock location or spoof location is enabled on your device. For accurate functionality, please disable these settings and use the app in a genuine location environment.","Mock location Detected!");
+
                 issues++;
             } else {
                 securityMetrics.put("isMockLocationEnabled", false);
@@ -413,7 +502,9 @@ String exp="1";
                         } else {
                             securityMetrics.put("isSignatureValid", false);
                             Log.d("test", "App signature is not valid.");
-                        //    issues++;
+                            showAlert(context,"The app signature is invalid, or the app may have been tampered with. For security reasons, please ensure the app is authentic and has not been modified.","App Tempering Detected!");
+
+                            //    issues++;
                         }
                         // Send metrics to server after setting the value
                           sendMetricsToServer(securityMetrics);
@@ -431,9 +522,11 @@ String exp="1";
 
             if (securityIssueDetected) {
                 sendMetricsToServer(securityMetrics);
-                showToast("We got "+issues+" issues in your device,App will close automatically");
-                issues=0;
-                new Handler().postDelayed(() -> exitApp(activity), 5000); // Delay of 20 seconds
+        //     showToast("We got "+issues+" issues in your device,App will close automatically");
+
+           // showCustomAlertDialog(context,"Root Detected");
+//                issues=0;
+//                new Handler().postDelayed(() -> exitApp(activity), 5000); // Delay of 20 seconds
             }
             else{
                 sendMetricsToServer(securityMetrics);
@@ -442,7 +535,7 @@ String exp="1";
             if (securityIssueDetected1) {
                 sendRuntimeMetricsAndCloseApp(securityMetrics, activity);
                 sendMetricsToServerruntime(securityMetrics);
-                new Handler().postDelayed(() -> exitApp(activity), 5000); // Delay of 20 seconds
+            //    new Handler().postDelayed(() -> exitApp(activity), 5000); // Delay of 20 seconds
             }
 
 //            else{
@@ -591,9 +684,10 @@ String exp="1";
         if (requestCode == PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 proceedWithSecurityCheck(activity);
-            } else {
-                showToast("Permission denied. Some security features may not work.");
             }
+//            else {
+//                showToast("Permission denied. Some security features may not work.");
+//            }
         }
     }
 
@@ -696,7 +790,7 @@ String exp="1";
 
     private void sendRuntimeMetricsAndCloseApp(JSONObject metrics, Activity activity) {
         sendRuntimeMetricsToServer(metrics);
-        new Handler().postDelayed(() -> exitApp(activity), 5000); // Close app after 20 seconds
+    //    new Handler().postDelayed(() -> exitApp(activity), 5000); // Close app after 20 seconds
     }
 
 
@@ -723,11 +817,342 @@ String exp="1";
 //        Toast.makeText(context, message, Toast.LENGTH_LONG).show();
 //    }
 
-private void showToast(String message) {
-    new Handler(Looper.getMainLooper()).post(() -> {
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
-    });
-}
+    private void showToast(String message) {
+        new Handler(Looper.getMainLooper()).post(() -> {
+             Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+//
+        });
+    }
 
+//    private void showCustomAlertDialog(Context context, String message) {
+//        new Handler(Looper.getMainLooper()).post(() -> {
+//            // Inflate the custom dialog layout
+//            LayoutInflater inflater = LayoutInflater.from(context);
+//            View customView = inflater.inflate(R.layout.custom_alert_dialog, null);
+//
+//            // Set up AlertDialog
+//            AlertDialog.Builder builder = new AlertDialog.Builder(context);
+//            builder.setView(customView);
+//            builder.setCancelable(false); // Prevent the user from dismissing the dialog
+//
+//            // Get the views from the custom layout
+//            TextView messageTextView = customView.findViewById(R.id.dialogMessage);
+//            Button closeButton = customView.findViewById(R.id.closeButton);
+//
+//            // Set the message
+//            messageTextView.setText(message);
+//
+//            // Set close button functionality
+//            closeButton.setOnClickListener(v -> {
+//                if (context instanceof Activity) {
+//                    ((Activity) context).finish(); // Close the app if the context is an activity
+//                }
+//            });
+//
+//            // Show the dialog
+//            AlertDialog dialog = builder.create();
+//            dialog.show();
+//        });
+//    }
+
+//    private void showCustomAlertDialog(Context context, String message) {
+//        // Ensure UI updates happen on the main thread
+//        if (context instanceof Activity) {
+//            Activity activity = (Activity) context;
+//
+//            // Check if the activity is still running
+//            if (activity != null && !activity.isFinishing() && !activity.isDestroyed())  {
+//                // Run the dialog code on the main thread
+//                Handler mainHandler = new Handler(Looper.getMainLooper());
+//                mainHandler.post(() ->  {
+//                    // Inflate the custom dialog layout
+//                    LayoutInflater inflater = LayoutInflater.from(context);
+//                    View customView = inflater.inflate(R.layout.custom_alert_dialog, null);
+//
+//                    // Set up AlertDialog
+//                    AlertDialog.Builder builder = new AlertDialog.Builder(context);
+//                    builder.setView(customView);
+//                    builder.setCancelable(false); // Prevent dismissing by tapping outside
+//
+//                    // Get the views from the custom layout
+//                    TextView messageTextView = customView.findViewById(R.id.dialogMessage);
+//                    Button closeButton = customView.findViewById(R.id.closeButton);
+//
+//                    // Set the message
+//                    messageTextView.setText(message);
+//
+//                    // Set close button functionality
+//                    closeButton.setOnClickListener(v -> {
+//                        activity.finish(); // Close the app if the context is an activity
+//                    });
+//
+//                    // Show the dialog
+//                    AlertDialog dialog = builder.create();
+//                    dialog.show();
+//                });
+//            }
+//        } else {
+//            Log.e("SecuritySDK", "Context is not an Activity or is already destroyed");
+//        }
+//    }
+
+//    private void showCustomAlertDialog(Context context, String message) {
+//        if (context instanceof Activity) {
+//            Activity activity = (Activity) context;
+//
+//            // Check if the activity is still active and not destroyed
+//            if (!activity.isFinishing() && !activity.isDestroyed()) {
+//                // Ensure the dialog is shown on the main thread
+//                Handler mainHandler = new Handler(Looper.getMainLooper());
+//                mainHandler.post(() -> {
+//                    try {
+//                        // Inflate the custom layout for the dialog
+//                        LayoutInflater inflater = LayoutInflater.from(context);
+//                        View customView = inflater.inflate(R.layout.custom_alert_dialog, null);
+//
+//                        // Set up the AlertDialog
+//                        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+//                        builder.setView(customView);
+//                        builder.setCancelable(false); // Prevent dismissing by tapping outside
+//
+//                        // Find the views and set the message
+//                        TextView messageTextView = customView.findViewById(R.id.dialogMessage);
+//                        Button closeButton = customView.findViewById(R.id.closeButton);
+//
+//                        messageTextView.setText(message);
+//
+//                        // Set up the close button to finish the activity
+//                        closeButton.setOnClickListener(v -> {
+//                            activity.finish(); // Close the activity when the button is clicked
+//                        });
+//
+//                        // Show the dialog
+//                        AlertDialog dialog = builder.create();
+//                        dialog.show();
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                        Log.e("SecuritySDK", "Error showing dialog: " + e.getMessage());
+//                    }
+//                });
+//            } else {
+//                Log.w("SecuritySDK", "Activity is finishing or destroyed, cannot show dialog.");
+//            }
+//        } else {
+//            Log.e("SecuritySDK", "Context is not an instance of Activity, cannot show dialog.");
+//        }
+//    }
+
+//    private void showCustomAlertDialog(Context context, String message) {
+//        if (context instanceof Activity) {
+//            Activity activity = (Activity) context;
+//
+//            // Ensure the activity is not finishing, destroyed, paused, or stopped
+//            if (!activity.isFinishing() && !activity.isDestroyed()) {
+//                // Inflate the custom layout for the dialog
+//                LayoutInflater inflater = LayoutInflater.from(context);
+//                View customView = inflater.inflate(R.layout.custom_alert_dialog, null);
+//
+//                // Set up the AlertDialog
+//                AlertDialog.Builder builder = new AlertDialog.Builder(context);
+//                builder.setView(customView);
+//                builder.setCancelable(false); // Prevent dismissing by tapping outside
+//
+//                // Find the views and set the message
+//                TextView messageTextView = customView.findViewById(R.id.dialogMessage);
+//                Button closeButton = customView.findViewById(R.id.closeButton);
+//
+//                messageTextView.setText(message);
+//
+//                // Set up the close button to finish the activity immediately if clicked
+//                closeButton.setOnClickListener(v -> {
+//                    if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
+//                        activity.finish(); // Close the activity immediately
+//                    }
+//                });
+//
+//                // Show the dialog
+//                AlertDialog dialog = builder.create();
+//                dialog.show();
+//
+//                // Use Handler to wait for 5 seconds before closing the app
+//                new Handler().postDelayed(() -> {
+//                    // Check if the activity is still valid before finishing it
+//                    if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
+//                        activity.finish(); // Close the activity after the delay
+//                    }
+//                }, 5000); // 5-second delay
+//            } else {
+//                Log.w("SecuritySDK", "Activity is not in a valid state to show dialog.");
+//            }
+//        } else {
+//            Log.e("SecuritySDK", "Context is not an instance of Activity, cannot show dialog.");
+//        }
+//    }
+
+
+
+//    private void showCustomAlertDialog(Context context, String message) {
+//        if (context instanceof Activity) {
+//            Activity activity = (Activity) context;
+//
+//            // Check if activity is in the RESUMED state (using Lifecycle state)
+//            if (
+//                    !activity.isFinishing() &&
+//                    !activity.isDestroyed()) {
+//
+//                // Inflate the custom layout for the dialog
+//                LayoutInflater inflater = LayoutInflater.from(context);
+//                View customView = inflater.inflate(R.layout.custom_alert_dialog, null);
+//
+//                // Set up the AlertDialog
+//                AlertDialog.Builder builder = new AlertDialog.Builder(context);
+//                builder.setView(customView);
+//                builder.setCancelable(false); // Prevent dismissing by tapping outside
+//
+//                // Find the views and set the message
+//                TextView messageTextView = customView.findViewById(R.id.dialogMessage);
+//                Button closeButton = customView.findViewById(R.id.closeButton);
+//
+//                messageTextView.setText(message);
+//
+//                // Set up the close button to finish the activity immediately if clicked
+//                closeButton.setOnClickListener(v -> {
+//                    if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
+//                        activity.finish(); // Close the activity immediately
+//                    }
+//                });
+//
+//                // Show the dialog
+//                AlertDialog dialog = builder.create();
+//                dialog.show();
+//
+//                // Use Handler to wait for 5 seconds before closing the app
+//                new Handler().postDelayed(() -> {
+//                    // Check if the activity is still valid before finishing it
+//                    if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
+//                        activity.finish(); // Close the activity after the delay
+//                    }
+//                }, 5000); // 5-second delay
+//            } else {
+//                Log.w("SecuritySDK", "Activity is not in a valid state to show dialog.");
+//            }
+//        } else {
+//            Log.e("SecuritySDK", "Context is not an instance of Activity, cannot show dialog.");
+//        }
+//    }
+
+//    private void showCustomAlertDialog(Context context, String message) {
+//        if (context instanceof Activity) {
+//            Activity activity = (Activity) context;
+//
+//            // Check if activity is in the RESUMED state (using Lifecycle state)
+//            if (!activity.isFinishing() && !activity.isDestroyed()) {
+//
+//                // Inflate the custom layout for the dialog
+//                LayoutInflater inflater = LayoutInflater.from(context);
+//                View customView = inflater.inflate(R.layout.custom_alert_dialog, null);
+//
+//                // Set up the AlertDialog
+//                AlertDialog.Builder builder = new AlertDialog.Builder(context);
+//                builder.setView(customView);
+//                builder.setCancelable(false); // Prevent dismissing by tapping outside
+//
+//                // Find the views and set the message
+//                TextView messageTextView = customView.findViewById(R.id.dialogMessage);
+//                Button closeButton = customView.findViewById(R.id.closeButton);
+//
+//                messageTextView.setText(message);
+//
+//                // Set up the close button to finish the activity immediately if clicked
+//                closeButton.setOnClickListener(v -> {
+//                    if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
+//                        activity.finish(); // Close the activity immediately
+//                    }
+//                });
+//
+//                // Show the dialog
+//                AlertDialog dialog = builder.create();
+//                dialog.show();
+//
+//                // Ensure that the dialog is dismissed when the activity is destroyed
+//                dialog.setOnDismissListener(dialogInterface -> {
+//                    if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
+//                        // Perform any cleanup if needed
+//                    }
+//                });
+//
+//                // Use Handler to wait for 5 seconds before closing the app
+//                new Handler().postDelayed(() -> {
+//                    // Check if the activity is still valid before finishing it
+//                    if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
+//                        activity.finish(); // Close the activity after the delay
+//                    }
+//                }, 5000); // 5-second delay
+//
+//            } else {
+//                Log.w("SecuritySDK", "Activity is not in a valid state to show dialog.");
+//            }
+//        } else {
+//            Log.e("SecuritySDK", "Context is not an instance of Activity, cannot show dialog.");
+//        }
+//    }
+//
+//private void showCustomAlertDialog(Context context, String message) {
+//    if (context instanceof Activity) {
+//        Activity activity = (Activity) context;
+//
+//        // Ensure activity is a FragmentActivity or AppCompatActivity
+//        if (activity instanceof FragmentActivity) {
+//            // Now use getSupportFragmentManager() to show the dialog
+//            CustomAlertDialogFragment dialogFragment = CustomAlertDialogFragment.newInstance(message);
+//            dialogFragment.show(((FragmentActivity) activity).getSupportFragmentManager(), "CustomAlertDialog");
+//
+//            // Use Handler to wait for 5 seconds before closing the app
+//            new Handler().postDelayed(() -> {
+//                if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
+//                    activity.finish(); // Close the activity after the delay
+//                }
+//            }, 5000); // 5-second delay
+//
+//        } else {
+//            Log.e("SecuritySDK", "Activity must be an instance of FragmentActivity or AppCompatActivity.");
+//        }
+//
+//    } else {
+//        Log.e("SecuritySDK", "Context is not an instance of Activity, cannot show dialog.");
+//    }
+//}
+
+//    private void showCustomAlertDialog(Context context, String message) {
+//        if (context instanceof Activity) {
+//            Activity activity = (Activity) context;
+//
+//            // Ensure activity is a FragmentActivity or AppCompatActivity
+//            if (activity instanceof FragmentActivity) {
+//                // Now use getSupportFragmentManager() to show the dialog
+//                CustomAlertDialogFragment dialogFragment = CustomAlertDialogFragment.newInstance(message);
+//
+//                // Show the dialog fragment using FragmentActivity's getSupportFragmentManager
+//                dialogFragment.show(((FragmentActivity) activity).getSupportFragmentManager(), "CustomAlertDialog");
+//
+//                // Use Handler to wait for 5 seconds before closing the app
+//                new Handler().postDelayed(() -> {
+//                    if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
+//                        // If activity is not finishing or destroyed, dismiss the dialog and finish the activity
+//                        if (dialogFragment != null && dialogFragment.isVisible()) {
+//                            dialogFragment.dismiss(); // Dismiss dialog if visible
+//                        }
+//                        activity.finish(); // Close the activity after the delay
+//                    }
+//                }, 5000); // 5-second delay
+//
+//            } else {
+//                Log.e("SecuritySDK", "Activity must be an instance of FragmentActivity or AppCompatActivity.");
+//            }
+//
+//        } else {
+//            Log.e("SecuritySDK", "Context is not an instance of Activity, cannot show dialog.");
+//        }
+//    }
 
 }
