@@ -140,7 +140,9 @@ public static void initializeAndCheckSecurity(Activity activity, String licenseK
 
     public void showAlert(Context context, String title,String message) {
         // Use DialogHelper to show the alert dialog
-        DialogHelper.showCustomAlertDialog(context, message,title);
+    DialogHelper.showCustomAlertDialog(context, message,title);
+
+      //  showToast("Proxy detected!");
     }
 
     public void checkActivityLifecycle(Activity activity) {
@@ -275,7 +277,7 @@ public static void initializeAndCheckSecurity(Activity activity, String licenseK
 
             if (RootDetection.isDeviceRooted()) {
                 Log.d("issue#1", "Rooted device");
-             //   showToast("Root detection detected!");
+              // showToast("Root detection detected!");
 
                 securityMetrics.put("isRooted", true);
                 securityIssueDetected = true;
@@ -825,12 +827,12 @@ public static void initializeAndCheckSecurity(Activity activity, String licenseK
 //        Toast.makeText(context, message, Toast.LENGTH_LONG).show();
 //    }
 //
-//    private void showToast(String message) {
-//        new Handler(Looper.getMainLooper()).post(() -> {
-//             Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
-////
-//        });
-//    }
+    private void showToast(String message) {
+        new Handler(Looper.getMainLooper()).post(() -> {
+             Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+//
+        });
+    }
 
 
 

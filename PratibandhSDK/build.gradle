@@ -4,9 +4,6 @@ plugins {
     id 'maven-publish'
 
 }
-
-
-
 android {
     namespace 'com.vaptlab.pratibandhsdk'
     compileSdk 34

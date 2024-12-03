@@ -6,9 +6,9 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -39,44 +39,38 @@ public class CustomAlertDialogFragment extends DialogFragment {
     @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        // Retrieve arguments
-        message = getArguments() != null ? getArguments().getString("message") : "";
-        description = getArguments() != null ? getArguments().getString("description") : "";
+        message = getArguments() != null ? getArguments().getString("message", "") : "";
+        description = getArguments() != null ? getArguments().getString("description", "") : "";
 
         Activity activity = getActivity();
-
-        // Ensure the activity is valid before proceeding
-        if (activity == null || activity.isFinishing()) {
+        if (activity == null || activity.isFinishing() || activity.isDestroyed()) {
             return new Dialog(requireContext());
         }
 
-        // Inflate the custom layout
         LayoutInflater inflater = activity.getLayoutInflater();
         View customView = inflater.inflate(R.layout.custom_alert_dialog, null);
 
-        // Create a new Dialog
         Dialog dialog = new Dialog(activity);
-
-        // Remove the default title bar
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-
-        // Set the custom view
         dialog.setContentView(customView);
 
-        // Set the dialog's background to transparent
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-            dialog.getWindow().setLayout(
-                    WindowManager.LayoutParams.MATCH_PARENT,
-                    WindowManager.LayoutParams.WRAP_CONTENT
-            );
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT);
         }
 
-        // Make the dialog non-cancelable
-        dialog.setCancelable(false);
-        dialog.setCanceledOnTouchOutside(false);
+        dialog.setCancelable(false);  // Prevent closing by touch outside
+        dialog.setCanceledOnTouchOutside(false);  // Prevent touch outside
 
-        // Bind the views
+        // Prevent the back button from closing the dialog
+        dialog.setOnKeyListener((dialog1, keyCode, event) -> {
+            if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_UP) {
+                return true;  // Returning true prevents the back button from closing the dialog
+            }
+            return false;
+        });
+
         TextView titleTextView = customView.findViewById(R.id.dialogTitle);
         ImageView appIconImageView = customView.findViewById(R.id.appIcon);
         TextView appNameTextView = customView.findViewById(R.id.appName);
@@ -84,26 +78,26 @@ public class CustomAlertDialogFragment extends DialogFragment {
         TextView descriptionTextView = customView.findViewById(R.id.dialogDescription);
         Button closeButton = customView.findViewById(R.id.closeButton);
 
-        // Set the title, message, and description
+        closeButton.setBackgroundColor(Color.parseColor("#ff4e37"));
+        closeButton.setTextColor(Color.WHITE);
+        closeButton.setClipToOutline(false);
+
         titleTextView.setText("Security Alert!");
         messageTextView.setText(message);
         descriptionTextView.setText(description);
 
-        // Set App Icon and Name with proper error handling
         PackageManager pm = activity.getPackageManager();
         try {
             ApplicationInfo appInfo = pm.getApplicationInfo(activity.getPackageName(), 0);
             String appName = pm.getApplicationLabel(appInfo).toString();
-            Drawable appIcon = pm.getApplicationIcon(appInfo);
-
             appNameTextView.setText(appName != null ? appName : "Unknown App");
-            appIconImageView.setImageDrawable(appIcon != null ? appIcon : activity.getDrawable(android.R.drawable.sym_def_app_icon));
+            appIconImageView.setImageDrawable(pm.getApplicationIcon(appInfo));
         } catch (Exception e) {
             appNameTextView.setText("Unknown App");
             appIconImageView.setImageResource(android.R.drawable.sym_def_app_icon);
         }
 
-        // Initialize countdown timer for the close button
+        // Countdown timer for close button and auto-close after 10 seconds
         countDownTimer = new CountDownTimer(10000, 1000) {
             int secondsLeft = 10;
 
@@ -116,29 +110,17 @@ public class CustomAlertDialogFragment extends DialogFragment {
             @Override
             public void onFinish() {
                 closeButton.setText("EXIT");
-                closeApp(activity); // Automatically close the app when the timer ends
+                closeApp(activity);
             }
         };
         countDownTimer.start();
 
-        // Close button click listener
+        // Close button logic
         closeButton.setOnClickListener(v -> {
             if (countDownTimer != null) {
                 countDownTimer.cancel(); // Cancel the timer if the button is clicked
             }
             closeApp(activity);
-        });
-
-        // Handle Back button press
-        dialog.setOnKeyListener((dialog1, keyCode, event) -> {
-            if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_UP) {
-                if (countDownTimer != null) {
-                    countDownTimer.cancel();
-                }
-                closeApp(activity);
-                return true; // Consume the back button event
-            }
-            return false;
         });
 
         return dialog;
@@ -152,12 +134,28 @@ public class CustomAlertDialogFragment extends DialogFragment {
         }
     }
 
+//    @Override
+//    public void onBackPressed() {
+//        super.onBackPressed();
+//    }
+
+
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (countDownTimer != null) {
+            countDownTimer.cancel(); // Ensure the timer is canceled if the dialog is paused
+        }
+    }
+
     private void closeApp(Activity activity) {
         // Close the app only if it's not already finishing
         if (activity != null && !activity.isFinishing()) {
-            activity.finish(); // Close the activity
-            activity.finishAffinity();
-            System.exit(0); // Ensure the app is fully terminated
+            activity.finish();
+          //  activity.finishAffinity();
+            System.exit(0); // Ensures the app is fully terminated
+          //  android.os.Process.killProcess(android.os.Process.myPid());
         }
     }
 }
