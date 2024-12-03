@@ -11,7 +11,7 @@ android {
     defaultConfig {
         minSdk 24
         versionCode 1
-        versionName "1.0.10"
+        versionName "1.0.11"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -43,7 +43,7 @@ publishing {
         maven(MavenPublication) {
             groupId = 'com.vaptlab'
             artifactId = 'pratibandhsdk'
-            version = '1.0.10'
+            version = '1.0.11'
 
             afterEvaluate {
                 // Ensures that the publication is configured after evaluating
