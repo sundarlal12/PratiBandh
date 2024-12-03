@@ -1,72 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:background="@drawable/rounded_border"
-    android:padding="0dp">
+    android:layout_margin="24dp"
+    android:padding="10dp"
+    android:background="@android:color/transparent">
 
-    <!-- Header with App Icon and Name -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="#E90A2AD9"
-        android:orientation="horizontal"
-        android:gravity="center"
+<LinearLayout
+android:layout_width="match_parent"
+android:layout_height="wrap_content"
+android:orientation="vertical"
+android:background="@drawable/rounded_border"
+android:padding="0dp">
+
+<!-- Header with App Icon and Name -->
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center"
+    android:background="#E90A2AD9"
     android:padding="12dp">
 
     <ImageView
         android:id="@+id/appIcon"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:layout_gravity="center"
-        android:contentDescription="App Icon" />
+        android:contentDescription="App Icon"
+        android:layout_marginEnd="12dp" />
 
     <TextView
         android:id="@+id/appName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:gravity="center_vertical"
         android:text="App Name"
         android:textColor="#FFFFFF"
         android:textSize="20sp"
         android:textStyle="bold" />
-
 </LinearLayout>
 
-    <!-- Main Content -->
+<!-- Main Content -->
 <LinearLayout
-android:layout_width="match_parent"
-android:layout_height="wrap_content"
-android:orientation="vertical"
-android:padding="16dp">
-
-<!-- Title -->
-<TextView
-    android:id="@+id/dialogTitle"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:text="Security Alert!"
-    android:textSize="27sp"
-    android:textColor="#D32F2F"
-    android:textStyle="bold"
-    android:gravity="center"
-    android:layout_marginBottom="12dp" />
+    android:orientation="vertical"
+    android:padding="16dp">
 
-<!-- Message -->
-<TextView
-    android:id="@+id/dialogMessage"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:text="Proxy Server Detected!"
-    android:textSize="18sp"
-    android:textColor="#424242"
-    android:textStyle="normal"
-    android:gravity="center"
-    android:layout_marginBottom="8dp" />
+    <!-- Title -->
+    <TextView
+        android:id="@+id/dialogTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Security Alert!"
+        android:textSize="22sp"
+        android:textColor="#D32F2F"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginBottom="16dp" />
 
-<!-- Description -->
+    <!-- Message -->
+    <TextView
+        android:id="@+id/dialogMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Proxy Server Detected!"
+        android:textSize="18sp"
+        android:textColor="#424242"
+        android:gravity="center"
+        android:layout_marginBottom="12dp" />
+
+    <!-- Description -->
     <TextView
         android:id="@+id/dialogDescription"
         android:layout_width="match_parent"
@@ -76,28 +79,20 @@ android:padding="16dp">
         android:textColor="#313030"
         android:gravity="center"
         android:lineSpacingExtra="4dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginBottom="10dp"
-     />
-
+        android:layout_marginBottom="16dp" />
 </LinearLayout>
 
-
-        <Button
-        android:id="@+id/closeButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/rounded_button"
-
-        android:text="EXIT (10)"
-        android:textColor="#FFFFFF"
-        android:textStyle="normal"
-        android:padding="12dp"
-        android:textSize="16sp"
-        android:layout_margin="16dp"
-        android:layout_marginTop="12dp"
-            />
-
-
-
+<!-- Close Button -->
+<Button
+    android:id="@+id/closeButton"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/rounded_button"
+    android:text="EXIT"
+    android:textColor="#FFFFFF"
+    android:textStyle="normal"
+    android:textSize="16sp"
+    android:padding="12dp"
+    android:layout_margin="16dp" />
 </LinearLayout>
+    </FrameLayout>

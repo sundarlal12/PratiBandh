@@ -660,7 +660,14 @@ public static void initializeAndCheckSecurity(Activity activity, String licenseK
     }
 
     public boolean enableProtection() {
-        return screenshotDetection.applyProtection();
+        if (screenshotDetection != null) {
+         //   screenshotDetection.cleanup();
+            cleanup();
+            return screenshotDetection.applyProtection();
+
+
+        }
+        return false;
     }
 
     public void cleanup() {
@@ -668,6 +675,7 @@ public static void initializeAndCheckSecurity(Activity activity, String licenseK
             screenshotDetection.cleanup();
         }
     }
+
 
 //    private String getIMEINumber(Context context) {
 //        TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
@@ -805,354 +813,25 @@ public static void initializeAndCheckSecurity(Activity activity, String licenseK
 //        }
 //    }
 
-    private void exitApp(Activity activity) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            activity.finishAndRemoveTask();
-        } else {
-            activity.finishAffinity();
-        }
-    }
+//    private void exitApp(Activity activity) {
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+//            activity.finishAndRemoveTask();
+//        } else {
+//            activity.finishAffinity();
+//        }
+//    }
 
 //    private void showToast(String message) {
 //        Toast.makeText(context, message, Toast.LENGTH_LONG).show();
 //    }
-
-    private void showToast(String message) {
-        new Handler(Looper.getMainLooper()).post(() -> {
-             Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
 //
-        });
-    }
-
-//    private void showCustomAlertDialog(Context context, String message) {
+//    private void showToast(String message) {
 //        new Handler(Looper.getMainLooper()).post(() -> {
-//            // Inflate the custom dialog layout
-//            LayoutInflater inflater = LayoutInflater.from(context);
-//            View customView = inflater.inflate(R.layout.custom_alert_dialog, null);
-//
-//            // Set up AlertDialog
-//            AlertDialog.Builder builder = new AlertDialog.Builder(context);
-//            builder.setView(customView);
-//            builder.setCancelable(false); // Prevent the user from dismissing the dialog
-//
-//            // Get the views from the custom layout
-//            TextView messageTextView = customView.findViewById(R.id.dialogMessage);
-//            Button closeButton = customView.findViewById(R.id.closeButton);
-//
-//            // Set the message
-//            messageTextView.setText(message);
-//
-//            // Set close button functionality
-//            closeButton.setOnClickListener(v -> {
-//                if (context instanceof Activity) {
-//                    ((Activity) context).finish(); // Close the app if the context is an activity
-//                }
-//            });
-//
-//            // Show the dialog
-//            AlertDialog dialog = builder.create();
-//            dialog.show();
+//             Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+////
 //        });
 //    }
 
-//    private void showCustomAlertDialog(Context context, String message) {
-//        // Ensure UI updates happen on the main thread
-//        if (context instanceof Activity) {
-//            Activity activity = (Activity) context;
-//
-//            // Check if the activity is still running
-//            if (activity != null && !activity.isFinishing() && !activity.isDestroyed())  {
-//                // Run the dialog code on the main thread
-//                Handler mainHandler = new Handler(Looper.getMainLooper());
-//                mainHandler.post(() ->  {
-//                    // Inflate the custom dialog layout
-//                    LayoutInflater inflater = LayoutInflater.from(context);
-//                    View customView = inflater.inflate(R.layout.custom_alert_dialog, null);
-//
-//                    // Set up AlertDialog
-//                    AlertDialog.Builder builder = new AlertDialog.Builder(context);
-//                    builder.setView(customView);
-//                    builder.setCancelable(false); // Prevent dismissing by tapping outside
-//
-//                    // Get the views from the custom layout
-//                    TextView messageTextView = customView.findViewById(R.id.dialogMessage);
-//                    Button closeButton = customView.findViewById(R.id.closeButton);
-//
-//                    // Set the message
-//                    messageTextView.setText(message);
-//
-//                    // Set close button functionality
-//                    closeButton.setOnClickListener(v -> {
-//                        activity.finish(); // Close the app if the context is an activity
-//                    });
-//
-//                    // Show the dialog
-//                    AlertDialog dialog = builder.create();
-//                    dialog.show();
-//                });
-//            }
-//        } else {
-//            Log.e("SecuritySDK", "Context is not an Activity or is already destroyed");
-//        }
-//    }
 
-//    private void showCustomAlertDialog(Context context, String message) {
-//        if (context instanceof Activity) {
-//            Activity activity = (Activity) context;
-//
-//            // Check if the activity is still active and not destroyed
-//            if (!activity.isFinishing() && !activity.isDestroyed()) {
-//                // Ensure the dialog is shown on the main thread
-//                Handler mainHandler = new Handler(Looper.getMainLooper());
-//                mainHandler.post(() -> {
-//                    try {
-//                        // Inflate the custom layout for the dialog
-//                        LayoutInflater inflater = LayoutInflater.from(context);
-//                        View customView = inflater.inflate(R.layout.custom_alert_dialog, null);
-//
-//                        // Set up the AlertDialog
-//                        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-//                        builder.setView(customView);
-//                        builder.setCancelable(false); // Prevent dismissing by tapping outside
-//
-//                        // Find the views and set the message
-//                        TextView messageTextView = customView.findViewById(R.id.dialogMessage);
-//                        Button closeButton = customView.findViewById(R.id.closeButton);
-//
-//                        messageTextView.setText(message);
-//
-//                        // Set up the close button to finish the activity
-//                        closeButton.setOnClickListener(v -> {
-//                            activity.finish(); // Close the activity when the button is clicked
-//                        });
-//
-//                        // Show the dialog
-//                        AlertDialog dialog = builder.create();
-//                        dialog.show();
-//                    } catch (Exception e) {
-//                        e.printStackTrace();
-//                        Log.e("SecuritySDK", "Error showing dialog: " + e.getMessage());
-//                    }
-//                });
-//            } else {
-//                Log.w("SecuritySDK", "Activity is finishing or destroyed, cannot show dialog.");
-//            }
-//        } else {
-//            Log.e("SecuritySDK", "Context is not an instance of Activity, cannot show dialog.");
-//        }
-//    }
-
-//    private void showCustomAlertDialog(Context context, String message) {
-//        if (context instanceof Activity) {
-//            Activity activity = (Activity) context;
-//
-//            // Ensure the activity is not finishing, destroyed, paused, or stopped
-//            if (!activity.isFinishing() && !activity.isDestroyed()) {
-//                // Inflate the custom layout for the dialog
-//                LayoutInflater inflater = LayoutInflater.from(context);
-//                View customView = inflater.inflate(R.layout.custom_alert_dialog, null);
-//
-//                // Set up the AlertDialog
-//                AlertDialog.Builder builder = new AlertDialog.Builder(context);
-//                builder.setView(customView);
-//                builder.setCancelable(false); // Prevent dismissing by tapping outside
-//
-//                // Find the views and set the message
-//                TextView messageTextView = customView.findViewById(R.id.dialogMessage);
-//                Button closeButton = customView.findViewById(R.id.closeButton);
-//
-//                messageTextView.setText(message);
-//
-//                // Set up the close button to finish the activity immediately if clicked
-//                closeButton.setOnClickListener(v -> {
-//                    if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
-//                        activity.finish(); // Close the activity immediately
-//                    }
-//                });
-//
-//                // Show the dialog
-//                AlertDialog dialog = builder.create();
-//                dialog.show();
-//
-//                // Use Handler to wait for 5 seconds before closing the app
-//                new Handler().postDelayed(() -> {
-//                    // Check if the activity is still valid before finishing it
-//                    if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
-//                        activity.finish(); // Close the activity after the delay
-//                    }
-//                }, 5000); // 5-second delay
-//            } else {
-//                Log.w("SecuritySDK", "Activity is not in a valid state to show dialog.");
-//            }
-//        } else {
-//            Log.e("SecuritySDK", "Context is not an instance of Activity, cannot show dialog.");
-//        }
-//    }
-
-
-
-//    private void showCustomAlertDialog(Context context, String message) {
-//        if (context instanceof Activity) {
-//            Activity activity = (Activity) context;
-//
-//            // Check if activity is in the RESUMED state (using Lifecycle state)
-//            if (
-//                    !activity.isFinishing() &&
-//                    !activity.isDestroyed()) {
-//
-//                // Inflate the custom layout for the dialog
-//                LayoutInflater inflater = LayoutInflater.from(context);
-//                View customView = inflater.inflate(R.layout.custom_alert_dialog, null);
-//
-//                // Set up the AlertDialog
-//                AlertDialog.Builder builder = new AlertDialog.Builder(context);
-//                builder.setView(customView);
-//                builder.setCancelable(false); // Prevent dismissing by tapping outside
-//
-//                // Find the views and set the message
-//                TextView messageTextView = customView.findViewById(R.id.dialogMessage);
-//                Button closeButton = customView.findViewById(R.id.closeButton);
-//
-//                messageTextView.setText(message);
-//
-//                // Set up the close button to finish the activity immediately if clicked
-//                closeButton.setOnClickListener(v -> {
-//                    if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
-//                        activity.finish(); // Close the activity immediately
-//                    }
-//                });
-//
-//                // Show the dialog
-//                AlertDialog dialog = builder.create();
-//                dialog.show();
-//
-//                // Use Handler to wait for 5 seconds before closing the app
-//                new Handler().postDelayed(() -> {
-//                    // Check if the activity is still valid before finishing it
-//                    if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
-//                        activity.finish(); // Close the activity after the delay
-//                    }
-//                }, 5000); // 5-second delay
-//            } else {
-//                Log.w("SecuritySDK", "Activity is not in a valid state to show dialog.");
-//            }
-//        } else {
-//            Log.e("SecuritySDK", "Context is not an instance of Activity, cannot show dialog.");
-//        }
-//    }
-
-//    private void showCustomAlertDialog(Context context, String message) {
-//        if (context instanceof Activity) {
-//            Activity activity = (Activity) context;
-//
-//            // Check if activity is in the RESUMED state (using Lifecycle state)
-//            if (!activity.isFinishing() && !activity.isDestroyed()) {
-//
-//                // Inflate the custom layout for the dialog
-//                LayoutInflater inflater = LayoutInflater.from(context);
-//                View customView = inflater.inflate(R.layout.custom_alert_dialog, null);
-//
-//                // Set up the AlertDialog
-//                AlertDialog.Builder builder = new AlertDialog.Builder(context);
-//                builder.setView(customView);
-//                builder.setCancelable(false); // Prevent dismissing by tapping outside
-//
-//                // Find the views and set the message
-//                TextView messageTextView = customView.findViewById(R.id.dialogMessage);
-//                Button closeButton = customView.findViewById(R.id.closeButton);
-//
-//                messageTextView.setText(message);
-//
-//                // Set up the close button to finish the activity immediately if clicked
-//                closeButton.setOnClickListener(v -> {
-//                    if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
-//                        activity.finish(); // Close the activity immediately
-//                    }
-//                });
-//
-//                // Show the dialog
-//                AlertDialog dialog = builder.create();
-//                dialog.show();
-//
-//                // Ensure that the dialog is dismissed when the activity is destroyed
-//                dialog.setOnDismissListener(dialogInterface -> {
-//                    if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
-//                        // Perform any cleanup if needed
-//                    }
-//                });
-//
-//                // Use Handler to wait for 5 seconds before closing the app
-//                new Handler().postDelayed(() -> {
-//                    // Check if the activity is still valid before finishing it
-//                    if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
-//                        activity.finish(); // Close the activity after the delay
-//                    }
-//                }, 5000); // 5-second delay
-//
-//            } else {
-//                Log.w("SecuritySDK", "Activity is not in a valid state to show dialog.");
-//            }
-//        } else {
-//            Log.e("SecuritySDK", "Context is not an instance of Activity, cannot show dialog.");
-//        }
-//    }
-//
-//private void showCustomAlertDialog(Context context, String message) {
-//    if (context instanceof Activity) {
-//        Activity activity = (Activity) context;
-//
-//        // Ensure activity is a FragmentActivity or AppCompatActivity
-//        if (activity instanceof FragmentActivity) {
-//            // Now use getSupportFragmentManager() to show the dialog
-//            CustomAlertDialogFragment dialogFragment = CustomAlertDialogFragment.newInstance(message);
-//            dialogFragment.show(((FragmentActivity) activity).getSupportFragmentManager(), "CustomAlertDialog");
-//
-//            // Use Handler to wait for 5 seconds before closing the app
-//            new Handler().postDelayed(() -> {
-//                if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
-//                    activity.finish(); // Close the activity after the delay
-//                }
-//            }, 5000); // 5-second delay
-//
-//        } else {
-//            Log.e("SecuritySDK", "Activity must be an instance of FragmentActivity or AppCompatActivity.");
-//        }
-//
-//    } else {
-//        Log.e("SecuritySDK", "Context is not an instance of Activity, cannot show dialog.");
-//    }
-//}
-
-//    private void showCustomAlertDialog(Context context, String message) {
-//        if (context instanceof Activity) {
-//            Activity activity = (Activity) context;
-//
-//            // Ensure activity is a FragmentActivity or AppCompatActivity
-//            if (activity instanceof FragmentActivity) {
-//                // Now use getSupportFragmentManager() to show the dialog
-//                CustomAlertDialogFragment dialogFragment = CustomAlertDialogFragment.newInstance(message);
-//
-//                // Show the dialog fragment using FragmentActivity's getSupportFragmentManager
-//                dialogFragment.show(((FragmentActivity) activity).getSupportFragmentManager(), "CustomAlertDialog");
-//
-//                // Use Handler to wait for 5 seconds before closing the app
-//                new Handler().postDelayed(() -> {
-//                    if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
-//                        // If activity is not finishing or destroyed, dismiss the dialog and finish the activity
-//                        if (dialogFragment != null && dialogFragment.isVisible()) {
-//                            dialogFragment.dismiss(); // Dismiss dialog if visible
-//                        }
-//                        activity.finish(); // Close the activity after the delay
-//                    }
-//                }, 5000); // 5-second delay
-//
-//            } else {
-//                Log.e("SecuritySDK", "Activity must be an instance of FragmentActivity or AppCompatActivity.");
-//            }
-//
-//        } else {
-//            Log.e("SecuritySDK", "Context is not an instance of Activity, cannot show dialog.");
-//        }
-//    }
 
 }

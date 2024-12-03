@@ -19,10 +19,12 @@ public class ScreenshotDetection {
         this.context = context;
         this.isProtectionEnabled = false;
 
-        // Initialize and register the receiver
+        // Initialize and register the receiver if context is valid
         if (context instanceof Activity) {
             this.receiver = new ScreenshotDetectionReceiver(context);
             this.receiver.register();
+        } else {
+            showToast("Context is not an instance of Activity. Screenshot detection might not work.");
         }
     }
 
@@ -34,13 +36,16 @@ public class ScreenshotDetection {
         if (context instanceof Activity) {
             Activity activity = (Activity) context;
 
-            // Apply FLAG_SECURE to prevent screenshots, screen recordings, and screen sharing
-            activity.getWindow().setFlags(
-                    WindowManager.LayoutParams.FLAG_SECURE,
-                    WindowManager.LayoutParams.FLAG_SECURE
-            );
+            if (!isProtectionEnabled) {
+                // Apply FLAG_SECURE to prevent screenshots, screen recordings, and screen sharing
+                activity.getWindow().setFlags(
+                        WindowManager.LayoutParams.FLAG_SECURE,
+                        WindowManager.LayoutParams.FLAG_SECURE
+                );
 
-            isProtectionEnabled = true;
+                isProtectionEnabled = true;
+             //   showToast("Screenshot protection enabled.");
+            }
         } else {
             showToast("Context is not an instance of Activity. Unable to apply protection.");
         }
@@ -53,7 +58,7 @@ public class ScreenshotDetection {
      * Should be called when the context (Activity) is destroyed.
      */
     public void cleanup() {
-        if (receiver != null) {
+        if (receiver != null && receiver.isRegistered()) {
             receiver.unregister();
             receiver = null;
         }
@@ -67,6 +72,7 @@ public class ScreenshotDetection {
     public class ScreenshotDetectionReceiver extends BroadcastReceiver {
 
         private final Context context;
+        private boolean isRegistered = false; // To track the registration state
 
         public ScreenshotDetectionReceiver(Context context) {
             this.context = context;
@@ -76,23 +82,34 @@ public class ScreenshotDetection {
         public void onReceive(Context context, Intent intent) {
             // Handle broadcast to detect potential screenshot or screen recording attempts
             if (Intent.ACTION_USER_PRESENT.equals(intent.getAction())) {
-                showToast("Potential screenshot or screen recording attempt detected.");
+            //    showToast("Potential screenshot or screen recording attempt detected.");
             }
         }
 
         public void register() {
-            IntentFilter filter = new IntentFilter();
-            filter.addAction(Intent.ACTION_USER_PRESENT); // Placeholder for actual detection
-            context.registerReceiver(this, filter);
+            if (!isRegistered) {
+                IntentFilter filter = new IntentFilter();
+                filter.addAction(Intent.ACTION_USER_PRESENT); // Placeholder for actual detection
+                context.registerReceiver(this, filter);
+                isRegistered = true;
+            }
         }
 
         public void unregister() {
-            try {
-                context.unregisterReceiver(this);
-            } catch (IllegalArgumentException e) {
-                // Handle case where receiver was not registered
-                e.printStackTrace();
+            if (isRegistered) {
+                try {
+                    context.unregisterReceiver(this);
+                } catch (IllegalArgumentException e) {
+                    // Handle case where receiver was not registered or already unregistered
+                    e.printStackTrace();
+                } finally {
+                    isRegistered = false;
+                }
             }
+        }
+
+        public boolean isRegistered() {
+            return isRegistered;
         }
     }
 }

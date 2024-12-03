@@ -1,29 +1,31 @@
 package com.vaptlab.pratibandhsdk;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Dialog;
-import android.content.DialogInterface;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.DialogFragment;
+
 public class CustomAlertDialogFragment extends DialogFragment {
 
     private String message;
     private String description;
-    private int countdownSeconds = 10; // Countdown time in seconds
     private CountDownTimer countDownTimer;
-    private boolean isCloseButtonClicked = false; // Track if the close button was clicked
 
     public static CustomAlertDialogFragment newInstance(String message, String description) {
         CustomAlertDialogFragment fragment = new CustomAlertDialogFragment();
@@ -45,25 +47,34 @@ public class CustomAlertDialogFragment extends DialogFragment {
 
         // Ensure the activity is valid before proceeding
         if (activity == null || activity.isFinishing()) {
-            return new AlertDialog.Builder(requireContext())
-                    .setTitle("Error")
-                    .setMessage("Unable to display dialog. Invalid activity context.")
-                    .setPositiveButton("OK", (dialog, which) -> dismiss())
-                    .create();
+            return new Dialog(requireContext());
         }
 
         // Inflate the custom layout
         LayoutInflater inflater = activity.getLayoutInflater();
         View customView = inflater.inflate(R.layout.custom_alert_dialog, null);
 
-        // Build the AlertDialog
-        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-        builder.setView(customView);
-        builder.setCancelable(false); // Prevent dismissing by tapping outside
+        // Create a new Dialog
+        Dialog dialog = new Dialog(activity);
 
-        // Prevent dismiss on touch outside
-        AlertDialog alertDialog = builder.create();
-        alertDialog.setCanceledOnTouchOutside(false); // Prevent dismissing by touch outside
+        // Remove the default title bar
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+        // Set the custom view
+        dialog.setContentView(customView);
+
+        // Set the dialog's background to transparent
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            dialog.getWindow().setLayout(
+                    WindowManager.LayoutParams.MATCH_PARENT,
+                    WindowManager.LayoutParams.WRAP_CONTENT
+            );
+        }
+
+        // Make the dialog non-cancelable
+        dialog.setCancelable(false);
+        dialog.setCanceledOnTouchOutside(false);
 
         // Bind the views
         TextView titleTextView = customView.findViewById(R.id.dialogTitle);
@@ -87,64 +98,57 @@ public class CustomAlertDialogFragment extends DialogFragment {
 
             appNameTextView.setText(appName != null ? appName : "Unknown App");
             appIconImageView.setImageDrawable(appIcon != null ? appIcon : activity.getDrawable(android.R.drawable.sym_def_app_icon));
-        } catch (PackageManager.NameNotFoundException e) {
-            appNameTextView.setText("Unknown App");
-            appIconImageView.setImageResource(android.R.drawable.sym_def_app_icon);
         } catch (Exception e) {
-            appNameTextView.setText("Error retrieving app info");
+            appNameTextView.setText("Unknown App");
             appIconImageView.setImageResource(android.R.drawable.sym_def_app_icon);
         }
 
-        // Countdown logic for the button
-        countDownTimer = new CountDownTimer(countdownSeconds * 1000, 1000) {
+        // Initialize countdown timer for the close button
+        countDownTimer = new CountDownTimer(10000, 1000) {
+            int secondsLeft = 10;
+
             @Override
             public void onTick(long millisUntilFinished) {
-                closeButton.setText("EXIT (" + millisUntilFinished / 1000 + ")");
+                closeButton.setText("CLOSE (" + secondsLeft + "s)");
+                secondsLeft--;
             }
 
             @Override
             public void onFinish() {
-                closeButton.setText("CLOSE APP");
-                // Close app when countdown finishes, if the button wasn't clicked
-                if (!isCloseButtonClicked) {
-                    closeApp(activity);
-                }
+                closeButton.setText("EXIT");
+                closeApp(activity); // Automatically close the app when the timer ends
             }
         };
         countDownTimer.start();
 
         // Close button click listener
         closeButton.setOnClickListener(v -> {
-            isCloseButtonClicked = true; // Mark the button as clicked
-            if (activity != null && !activity.isFinishing()) {
-                closeApp(activity);
+            if (countDownTimer != null) {
+                countDownTimer.cancel(); // Cancel the timer if the button is clicked
             }
+            closeApp(activity);
         });
 
-        return alertDialog;
+        // Handle Back button press
+        dialog.setOnKeyListener((dialog1, keyCode, event) -> {
+            if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_UP) {
+                if (countDownTimer != null) {
+                    countDownTimer.cancel();
+                }
+                closeApp(activity);
+                return true; // Consume the back button event
+            }
+            return false;
+        });
+
+        return dialog;
     }
 
     @Override
-    public void onCancel(@NonNull DialogInterface dialog) {
-        // Override the default cancel behavior to prevent dismiss when clicking outside
-    }
-
-    @Override
-    public void onDismiss(@NonNull DialogInterface dialog) {
-        super.onDismiss(dialog);
-        Activity activity = getActivity();
-        if (activity != null && !activity.isFinishing()) {
-            activity.finish();
-        }
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        // Cancel the timer to prevent memory leaks
+    public void onDestroy() {
+        super.onDestroy();
         if (countDownTimer != null) {
-            countDownTimer.cancel();
-            countDownTimer = null;
+            countDownTimer.cancel(); // Ensure the timer is canceled if the dialog is destroyed
         }
     }
 
@@ -152,6 +156,8 @@ public class CustomAlertDialogFragment extends DialogFragment {
         // Close the app only if it's not already finishing
         if (activity != null && !activity.isFinishing()) {
             activity.finish(); // Close the activity
+            activity.finishAffinity();
+            System.exit(0); // Ensure the app is fully terminated
         }
     }
 }

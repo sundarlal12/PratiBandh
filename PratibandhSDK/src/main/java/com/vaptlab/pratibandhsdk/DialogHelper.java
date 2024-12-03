@@ -2,7 +2,6 @@ package com.vaptlab.pratibandhsdk;
 
 import android.app.Activity;
 import android.content.Context;
-import android.os.Handler;
 import android.util.Log;
 
 import androidx.fragment.app.FragmentActivity;
@@ -20,18 +19,6 @@ public class DialogHelper {
 
                 // Show the dialog fragment using FragmentActivity's getSupportFragmentManager
                 dialogFragment.show(((FragmentActivity) activity).getSupportFragmentManager(), "CustomAlertDialog");
-
-                // Use Handler to wait for 5 seconds before closing the app
-                new Handler().postDelayed(() -> {
-                    if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
-                        // If activity is not finishing or destroyed, dismiss the dialog and finish the activity
-                        if (dialogFragment != null && dialogFragment.isVisible()) {
-                            dialogFragment.dismiss(); // Dismiss dialog if visible
-                        }
-                        activity.finish(); // Close the activity after the delay
-                    }
-                }, 1000000); // 5-second delay
-
             } else {
                 Log.e("SecuritySDK", "Activity must be an instance of FragmentActivity or AppCompatActivity.");
             }
